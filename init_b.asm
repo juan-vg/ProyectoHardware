@@ -45,6 +45,83 @@ Reset_Handler:
 stop:
         B       stop        /*  end of program */
 
+################################################################################################################
+.arm
+.global sudoku_candidatos_arm
+
+
+sudoku_candidatos_arm:
+		# saves the working registers
+        # se puede modificar r0, r1, r2 y r3 sin guardarlos previamente.
+        STMFD   sp!, {r4-r11}
+
+        # obtener @ fila (de 32 en 32 bytes)
+        # r1 (calc. fila) = r1 (param. fila) * 32
+        mov r1, r1, lsl#5
+        add r1, r0, r1
+        ldr r3, =0x0C000000
+        add r1, r1, r3
+
+        # obtener @ columna (de 2 en 2 bytes)
+        # r3 (calc. posicion) = r1 (calc. fila) + r2 (param. columna) * 2
+        add r3, r1, r2, lsl#1
+
+		# obtener contenido de la celda
+        ldrh r4, [r3]
+
+		# si NO es uno de los numeros fijados inicialmente (pista = 0)
+        # ands r5, r4, #0x800
+
+        # iniciar candidatos
+        ldr r5, =0x1FF
+		orr r4, r4, r5
+
+		# recorrer fila recalculando candidatos
+
+		# contador de columna
+		mov r6, #9
+
+recorre_fila:
+
+		# evita comprobar la celda que estamos tratando
+		cmp r1, r3
+		addeq r1, r1, #2
+		beq recorre_fila_siguiente
+
+		# obtener contenido de una celda de la fila
+		ldrh r5, [r1], #2
+
+		# obtener valor (4b mas significativos) [guarda flags]
+		movs r5, r5, lsr#12
+
+		# obtener desplazamiento [si valor != 0]
+		subne r5, r5, #1
+
+		# obtiene mascara para descartar candidato [si valor != 0]
+		movne r7, #1
+		lslne r7, r5
+
+		# descarta candidato (pone bit a cero) [si valor != 0]
+		bicne r4, r4, r7
+
+recorre_fila_siguiente:
+
+		# resta una columna del contador
+		subs r6, r6, #1
+
+		bne recorre_fila
+
+		# strh r4, [r3]
+
+
+		# SALIR
+
+        # restore the original registers
+        LDMFD   sp!, {r4-r11}
+
+        #return to the instruccion that called the rutine and to arm mode
+        bx 	r14
+
 #################################################################################################################
 .data
 .ltorg /*guarantees the alignment*/

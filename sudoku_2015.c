@@ -30,7 +30,7 @@ inline uint8_t celda_leer_valor(CELDA celda) {
 
 // funcion a implementar en ARM
 extern int
-sudoku_candidatos_arm(CELDA cuadricula[NUM_FILAS][NUM_COLUMNAS]);
+sudoku_candidatos_arm(CELDA , uint8_t, uint8_t);
 
 // funcion a implementar en Thumb
 extern int
@@ -166,7 +166,10 @@ int sudoku_recalcular_c(CELDA cuadricula[NUM_FILAS][NUM_COLUMNAS]) {
 void sudoku9x9(CELDA cuadricula[NUM_FILAS][NUM_COLUMNAS], char *ready) {
 	int celdas_vacias;     //numero de celdas aun vacias
 
-	celdas_vacias = sudoku_recalcular_c(cuadricula);
+	//__asm__("mov r0,#0");
+
+	sudoku_candidatos_arm(cuadricula,7,3);
+	//celdas_vacias = sudoku_recalcular_c(cuadricula);
 
 }
 
