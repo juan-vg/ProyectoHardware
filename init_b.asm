@@ -97,6 +97,10 @@ sudoku_recalcular_arm_recorre_fila:
 
 
 
+
+		# devuelve resultado
+		mov r0, r3
+
         # SALIR
 
         # restore the original registers
