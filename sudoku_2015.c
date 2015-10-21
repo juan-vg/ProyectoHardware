@@ -30,11 +30,11 @@ inline uint8_t celda_leer_valor(CELDA celda) {
 
 // funcion a implementar en ARM
 extern int
-sudoku_candidatos_arm(CELDA , uint8_t, uint8_t);
+sudoku_candidatos_arm(CELDA* , uint8_t, uint8_t);
 
 // funcion a implementar en Thumb
 extern int
-sudoku_candidatos_thumb(CELDA cuadricula[NUM_FILAS][NUM_COLUMNAS]);
+sudoku_candidatos_thumb(CELDA* , uint8_t, uint8_t);
 
 ////////////////////////////////////////////////////////////////////////////////
 // dada una determinada celda encuentra los posibles valores candidatos
@@ -98,22 +98,22 @@ int sudoku_candidatos_c(CELDA cuadricula[NUM_FILAS][NUM_COLUMNAS], uint8_t fila,
 
 			// recorrer region recalculando candidatos
 			// obtener region
-			uint8_t regionColumna = columna / 3;
 			uint8_t regionFila = fila / 3;
+			uint8_t regionColumna = columna / 3;
 
 			// calcular punto inicial de la region
-			regionColumna = regionColumna * 3;
 			regionFila = regionFila * 3;
+			regionColumna = regionColumna * 3;
 
 			// recorrer region
-			for (i = regionColumna; i < regionColumna + 3; i++) {
-				for (j = regionFila; j < regionFila + 3; j++) {
+			for (i = regionFila; i < regionColumna + 3; i++) {
+				for (j = regionColumna; j < regionFila + 3; j++) {
 
-					if (i != columna || j != fila) {
+					if (i != fila || j != columna) {
 
 						//eliminar valores de candidatos
 						//TODO: comprobar si hay error
-						uint8_t valor = celda_leer_valor(cuadricula[j][i]);
+						uint8_t valor = celda_leer_valor(cuadricula[i][j]);
 
 						if (valor != 0) {
 
@@ -168,7 +168,7 @@ void sudoku9x9(CELDA cuadricula[NUM_FILAS][NUM_COLUMNAS], char *ready) {
 
 	//__asm__("mov r0,#0");
 
-	sudoku_candidatos_arm(cuadricula,7,3);
+	celdas_vacias = sudoku_candidatos_arm(cuadricula,4,0);
 	//celdas_vacias = sudoku_recalcular_c(cuadricula);
 
 }
