@@ -30,6 +30,10 @@ inline uint8_t celda_leer_valor(CELDA celda) {
 
 // funcion a implementar en ARM
 extern int
+sudoku_recalcular_arm(CELDA*);
+
+// funcion a implementar en ARM
+extern int
 sudoku_candidatos_arm(CELDA* , uint8_t, uint8_t);
 
 // funcion a implementar en Thumb
@@ -48,9 +52,9 @@ int sudoku_candidatos_c(CELDA cuadricula[NUM_FILAS][NUM_COLUMNAS], uint8_t fila,
 	//si NO es uno de los numeros fijados inicialmente (pista = 0)
 	if ((cuadricula[fila][columna] & 0x0800) == 0) {
 
-		//si tiene un valor erroneo, o no tiene valor
-		if ((cuadricula[fila][columna] & 0x0400) == 0
-				|| (cuadricula[fila][columna] & 0xF000) != 0) {
+		//si no tiene valor
+		//TODO: o si tiene error
+		if ((cuadricula[fila][columna] & 0xF000) != 0) {
 
 			//TODO: Tratar error, borrando bit de error y el valor de la celda
 
@@ -109,6 +113,7 @@ int sudoku_candidatos_c(CELDA cuadricula[NUM_FILAS][NUM_COLUMNAS], uint8_t fila,
 			for (i = regionFila; i < regionColumna + 3; i++) {
 				for (j = regionColumna; j < regionFila + 3; j++) {
 
+					//evita comprobar la celda que estamos tratando
 					if (i != fila || j != columna) {
 
 						//eliminar valores de candidatos
@@ -148,8 +153,8 @@ int sudoku_recalcular_c(CELDA cuadricula[NUM_FILAS][NUM_COLUMNAS]) {
 		for (j = 0; j < limiteColumna; j++) {
 
 			//determinar candidatos
-			if (sudoku_candidatos_c(cuadricula, i, j) == FALSE) {
-
+			//if (sudoku_candidatos_c(cuadricula, i, j) == FALSE) {
+			if (sudoku_candidatos_arm((CELDA*)cuadricula, i, j) == FALSE) {
 				//actualizar contador de celdas vacias
 				contador++;
 			}
@@ -168,8 +173,7 @@ void sudoku9x9(CELDA cuadricula[NUM_FILAS][NUM_COLUMNAS], char *ready) {
 
 	//__asm__("mov r0,#0");
 
-	celdas_vacias = sudoku_candidatos_arm(cuadricula,4,0);
-	//celdas_vacias = sudoku_recalcular_c(cuadricula);
+	celdas_vacias = sudoku_recalcular_arm((CELDA*)cuadricula);
 
 }
 
