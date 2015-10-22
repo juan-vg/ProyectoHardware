@@ -1,4 +1,5 @@
 #include <inttypes.h>
+#include <stdio.h>
 
 // Tamaños de la cuadricula
 // Se utilizan 16 columnas para facilitar la visualización
@@ -30,7 +31,7 @@ inline uint8_t celda_leer_valor(CELDA celda) {
 
 // funcion a implementar en ARM
 extern int
-sudoku_recalcular_arm(CELDA*);
+sudoku_recalcular_arm(CELDA*, uint16_t);
 
 // funcion a implementar en ARM
 extern int
@@ -54,7 +55,7 @@ int sudoku_candidatos_c(CELDA cuadricula[NUM_FILAS][NUM_COLUMNAS], uint8_t fila,
 
 		//si no tiene valor
 		//TODO: o si tiene error
-		if ((cuadricula[fila][columna] & 0xF000) != 0) {
+		if (celda_leer_valor(cuadricula[fila][columna]) == 0) {
 
 			//TODO: Tratar error, borrando bit de error y el valor de la celda
 
@@ -110,8 +111,8 @@ int sudoku_candidatos_c(CELDA cuadricula[NUM_FILAS][NUM_COLUMNAS], uint8_t fila,
 			regionColumna = regionColumna * 3;
 
 			// recorrer region
-			for (i = regionFila; i < regionColumna + 3; i++) {
-				for (j = regionColumna; j < regionFila + 3; j++) {
+			for (i = regionFila; i < regionFila + 3; i++) {
+				for (j = regionColumna; j < regionColumna + 3; j++) {
 
 					//evita comprobar la celda que estamos tratando
 					if (i != fila || j != columna) {
@@ -140,11 +141,12 @@ int sudoku_candidatos_c(CELDA cuadricula[NUM_FILAS][NUM_COLUMNAS], uint8_t fila,
 ////////////////////////////////////////////////////////////////////////////////
 // recalcula todo el tablero (9x9)
 // retorna el numero de celdas vacias
-int sudoku_recalcular_c(CELDA cuadricula[NUM_FILAS][NUM_COLUMNAS]) {
+int sudoku_recalcular_c(CELDA cuadricula[NUM_FILAS][NUM_COLUMNAS], int opcion) {
 
 	uint8_t contador = 0;
 	uint8_t i, j;
 	uint8_t limiteColumna = NUM_COLUMNAS - PADDING;
+	uint16_t resultado;
 
 //para cada fila
 	for (i = 0; i < NUM_FILAS; i++) {
@@ -153,8 +155,18 @@ int sudoku_recalcular_c(CELDA cuadricula[NUM_FILAS][NUM_COLUMNAS]) {
 		for (j = 0; j < limiteColumna; j++) {
 
 			//determinar candidatos
-			//if (sudoku_candidatos_c(cuadricula, i, j) == FALSE) {
-			if (sudoku_candidatos_arm((CELDA*)cuadricula, i, j) == FALSE) {
+
+			if (opcion == 1){
+				resultado = sudoku_candidatos_c(cuadricula, i, j);
+
+			} else if (opcion == 2){
+				resultado = sudoku_candidatos_arm((CELDA*)cuadricula, i, j);
+
+			} else if (opcion == 3) {
+				resultado = sudoku_candidatos_thumb((CELDA*)cuadricula, i, j);
+			}
+
+			if (resultado == FALSE) {
 				//actualizar contador de celdas vacias
 				contador++;
 			}
@@ -165,15 +177,62 @@ int sudoku_recalcular_c(CELDA cuadricula[NUM_FILAS][NUM_COLUMNAS]) {
 	return contador;
 }
 
+void comprobar_resultados(CELDA cuadricula1[NUM_FILAS][NUM_COLUMNAS],
+		CELDA cuadricula2[NUM_FILAS][NUM_COLUMNAS],
+		CELDA cuadricula3[NUM_FILAS][NUM_COLUMNAS],
+		CELDA cuadricula4[NUM_FILAS][NUM_COLUMNAS],
+		CELDA cuadricula5[NUM_FILAS][NUM_COLUMNAS],
+		CELDA cuadricula6[NUM_FILAS][NUM_COLUMNAS],
+		uint16_t resultados[6]) {
+
+	uint8_t i, j;
+	uint16_t diferencias_tablero = 0;
+	uint8_t diferencias_resultados = 0;
+
+	// comprueba tableros
+	for(i = 0; i < NUM_FILAS; i++){
+		for(j = 0; j < NUM_COLUMNAS - PADDING; j++){
+
+			// comprueba diferencias entre los 6 tableros
+			if(cuadricula1[i][j] != cuadricula2[i][j] ||
+					cuadricula1[i][j] != cuadricula3[i][j] ||
+					cuadricula1[i][j] != cuadricula4[i][j] ||
+					cuadricula1[i][j] != cuadricula5[i][j] ||
+					cuadricula1[i][j] != cuadricula6[i][j]){
+
+				diferencias_tablero++;
+			}
+		}
+	}
+
+	// comprueba resultados
+	for(i = 1; i < 6; i++){
+		if (resultados[0] != resultados[i]){
+			diferencias_resultados++;
+		}
+	}
+
+	//printf("Numero de celdas diferentes: %d\n", diferencias_tablero);
+	//printf("Numero de resultados diferentes: %d\n", diferencias_resultados);
+
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 // proceso principal del juego que recibe el tablero,
+// la opcion de funcionamiento (C-ARM, ARM-ARM, ...),
 // y la señal de ready que indica que se han actualizado fila y columna
-void sudoku9x9(CELDA cuadricula[NUM_FILAS][NUM_COLUMNAS], char *ready) {
-	int celdas_vacias;     //numero de celdas aun vacias
+int sudoku9x9(CELDA cuadricula[NUM_FILAS][NUM_COLUMNAS], int opcion, char *ready) {
+	int celdas_vacias;
 
-	//__asm__("mov r0,#0");
+	if (opcion >= 1 && opcion <= 3){
 
-	celdas_vacias = sudoku_recalcular_arm((CELDA*)cuadricula);
+		celdas_vacias = sudoku_recalcular_c(cuadricula, opcion);
 
+	} else if (opcion >= 4 && opcion <= 6){
+
+		celdas_vacias = sudoku_recalcular_arm((CELDA*)cuadricula, opcion-3);
+	}
+
+	return celdas_vacias;
 }
 

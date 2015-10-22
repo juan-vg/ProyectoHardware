@@ -34,13 +34,96 @@ Reset_Handler:
 # FUNCTION CALL the parameters are stored in r0 and r1
 # If there are 4 or less parameters when calling a C function the compiler assumes that they have
 # been stored in r0-r3. If there are more parameters you have to store them in the data stack using the stack pointer
-# function __c_copy is in copy.c
-        LDR     r0, =cuadricula  /*  puntero a la cuadricula */
 
 .extern     sudoku9x9
-        ldr         r5, = sudoku9x9
-        mov         lr, pc
-        bx          r5
+
+		ldr r7, =resultados
+
+		// C - C
+		# parametros
+        LDR r0, =cuadricula1
+        mov r1, #1
+        # retorno
+        mov r6, pc
+        b salto
+        #almacena resultado
+        strh r0,[r7],#2
+
+		// C - ARM
+		# parametros
+        LDR r0, =cuadricula2
+        mov r1, #2
+        # retorno
+        mov r6, pc
+        b salto
+        #almacena resultado
+        strh r0,[r7],#2
+
+		// C - THUMB
+		# parametros
+        LDR r0, =cuadricula3
+        mov r1, #3
+        # retorno
+        mov r6, pc
+        b salto
+        #almacena resultado
+        strh r0,[r7],#2
+
+		// ARM - C
+		# parametros
+        LDR r0, =cuadricula4
+        mov r1, #4
+        # retorno
+        mov r6, pc
+        b salto
+        #almacena resultado
+        strh r0,[r7],#2
+
+		// ARM - ARM
+		# parametros
+        LDR r0, =cuadricula5
+        mov r1, #5
+        # retorno
+        mov r6, pc
+        b salto
+        #almacena resultado
+        strh r0,[r7],#2
+
+		// ARM - THUMB
+		# parametros
+        LDR r0, =cuadricula6
+        mov r1, #6
+        # retorno
+        mov r6, pc
+        b salto
+        #almacena resultado
+        strh r0,[r7]
+
+		# cuando vuelve
+        b comprobar_tablero
+
+salto:
+        ldr r5, = sudoku9x9
+        mov lr, r6
+        bx  r5
+
+comprobar_tablero:
+.extern     comprobar_resultados
+
+		# preparar parametros
+		ldr r0, =cuadricula5
+		ldr r1, =cuadricula6
+		ldr r2, =resultados
+		STMFD sp!, {r0-r2}
+		ldr r0, =cuadricula1
+		ldr r1, =cuadricula2
+		ldr r2, =cuadricula3
+		ldr r3, =cuadricula4
+
+
+		ldr r5, =comprobar_resultados
+        mov lr, pc
+        bx  r5
 
 stop:
         B       stop        /*  end of program */
@@ -52,6 +135,9 @@ sudoku_recalcular_arm:
 		# saves the working registers
         # se puede modificar r0, r1, r2 y r3 sin guardarlos previamente.
         STMFD   sp!, {r4-r11, lr}
+
+        # guardar parametro opcion
+        mov r4, r1
 
         # contador = 0
         mov r3, #0
@@ -69,8 +155,26 @@ sudoku_recalcular_arm_recorre_fila:
 		# guarda registros locales en uso antes de llamada a funcion
         STMFD   sp!, {r0-r3}
 
+        # comprueba el parametro opcion
+        cmp r4, #2
+
 		# los parametros se corresponden con los registros locales actuales
+		beq sudoku_recalcular_arm_arm
+		bgt sudoku_recalcular_arm_thumb
+
+        bl sudoku_candidatos_c
+        b sudoku_recalcular_arm_recorre_fila_sigue
+
+sudoku_recalcular_arm_arm:
+
         bl sudoku_candidatos_arm
+        b sudoku_recalcular_arm_recorre_fila_sigue
+
+sudoku_recalcular_arm_thumb:
+
+        bl sudoku_candidatos_thumb
+
+sudoku_recalcular_arm_recorre_fila_sigue:
 
 		# comprueba resultado (0 es celda vacia)
 		cmp r0, #0
@@ -229,6 +333,7 @@ candidatos_arm_recorre_region_divide_fila:
 		addge r3, r3, #1
 		bgt candidatos_arm_recorre_region_divide_fila
 
+		# r1 = r3 * 3
 		add r1, r3, r3, lsl#1
 
 		# obtener columna inicial de la region (columna / 3)*3
@@ -238,6 +343,7 @@ candidatos_arm_recorre_region_divide_columna:
 		addge r3, r3, #1
 		bgt candidatos_arm_recorre_region_divide_columna
 
+		# r2 = r3 * 3
 		add r2, r3, r3, lsl#1
 
 
@@ -400,7 +506,7 @@ candidatos_thumb_recorre_fila:
 
 		# si celda actual = celda investigada, no trata la celda
 		add r3, #2
-		beq candidatos_thumb_recorre_fila_siguiente
+		b candidatos_thumb_recorre_fila_siguiente
 
 candidatos_thumb_recorre_fila_celda_distinta:
 
@@ -457,7 +563,7 @@ candidatos_thumb_recorre_columna:
 		bne candidatos_thumb_recorre_columna_celda_distinta
 
 		add r3, #32
-		beq candidatos_thumb_recorre_columna_siguiente
+		b candidatos_thumb_recorre_columna_siguiente
 
 candidatos_thumb_recorre_columna_celda_distinta:
 
@@ -510,9 +616,11 @@ candidatos_thumb_recorre_region_divide_fila:
 		add r3, #1
 
 candidatos_thumb_recorre_region_divide_fila_evitar_suma:
-
+		cmp r1, #0
 		bgt candidatos_thumb_recorre_region_divide_fila
 
+		# mul * 3
+		mov r1, r3
 		lsl r3, #1
 		add r1, r3
 
@@ -527,8 +635,11 @@ candidatos_thumb_recorre_region_divide_columna:
 
 candidatos_thumb_recorre_region_divide_columna_evitar_suma:
 
+		cmp r2, #0
 		bgt candidatos_thumb_recorre_region_divide_columna
 
+		# mul * 3
+		mov r2, r3
 		lsl r3, #1
 		add r2, r3
 
@@ -615,12 +726,14 @@ candidatos_thumb_return:
 
 		bne candidatos_thumb_return_true
 
+		# devuelve FALSE
 		mov r0, #0
 
 		b candidatos_thumb_return_fin
 
 candidatos_thumb_return_true:
 
+		# devuelve TRUE
 		mov r0, #1
 
 candidatos_thumb_return_fin:
@@ -642,8 +755,77 @@ candidatos_thumb_return_fin:
 .ltorg /*guarantees the alignment*/
 .align 5
 
+resultados:
+     /* 6 huecos para almacenar resultados de celdas vacias + PADDING */
+    .hword 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+
 # huecos para cuadrar
-cuadricula:
+cuadricula1:
+     /* 9 filas de 16 entradas para facilitar la visualizacion y 16 bits por celda */
+    .hword   0x9800,0x6800,0x0000,0x0000,0x0000,0x0000,0x7800,0x0000,0x8800,0,0,0,0,0,0,0
+    .hword   0x8800,0x0000,0x0000,0x0000,0x0000,0x4800,0x3800,0x0000,0x0000,0,0,0,0,0,0,0
+    .hword   0x1800,0x0000,0x0000,0x5800,0x0000,0x0000,0x0000,0x0000,0x0000,0,0,0,0,0,0,0
+    .hword   0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x1800,0x7800,0x6800,0,0,0,0,0,0,0
+    .hword   0x2800,0x0000,0x0000,0x0000,0x9800,0x3800,0x0000,0x0000,0x5800,0,0,0,0,0,0,0
+    .hword   0x7800,0x0000,0x8800,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0,0,0,0,0,0,0
+    .hword   0x0000,0x0000,0x7800,0x0000,0x3800,0x2800,0x0000,0x4800,0x0000,0,0,0,0,0,0,0
+    .hword   0x3800,0x8800,0x2800,0x1800,0x0000,0x5800,0x6800,0x0000,0x0000,0,0,0,0,0,0,0
+    .hword   0x0000,0x4800,0x1800,0x0000,0x0000,0x9800,0x5800,0x2800,0x0000,0,0,0,0,0,0,0
+
+# huecos para cuadrar
+cuadricula2:
+     /* 9 filas de 16 entradas para facilitar la visualizacion y 16 bits por celda */
+    .hword   0x9800,0x6800,0x0000,0x0000,0x0000,0x0000,0x7800,0x0000,0x8800,0,0,0,0,0,0,0
+    .hword   0x8800,0x0000,0x0000,0x0000,0x0000,0x4800,0x3800,0x0000,0x0000,0,0,0,0,0,0,0
+    .hword   0x1800,0x0000,0x0000,0x5800,0x0000,0x0000,0x0000,0x0000,0x0000,0,0,0,0,0,0,0
+    .hword   0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x1800,0x7800,0x6800,0,0,0,0,0,0,0
+    .hword   0x2800,0x0000,0x0000,0x0000,0x9800,0x3800,0x0000,0x0000,0x5800,0,0,0,0,0,0,0
+    .hword   0x7800,0x0000,0x8800,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0,0,0,0,0,0,0
+    .hword   0x0000,0x0000,0x7800,0x0000,0x3800,0x2800,0x0000,0x4800,0x0000,0,0,0,0,0,0,0
+    .hword   0x3800,0x8800,0x2800,0x1800,0x0000,0x5800,0x6800,0x0000,0x0000,0,0,0,0,0,0,0
+    .hword   0x0000,0x4800,0x1800,0x0000,0x0000,0x9800,0x5800,0x2800,0x0000,0,0,0,0,0,0,0
+
+# huecos para cuadrar
+cuadricula3:
+     /* 9 filas de 16 entradas para facilitar la visualizacion y 16 bits por celda */
+    .hword   0x9800,0x6800,0x0000,0x0000,0x0000,0x0000,0x7800,0x0000,0x8800,0,0,0,0,0,0,0
+    .hword   0x8800,0x0000,0x0000,0x0000,0x0000,0x4800,0x3800,0x0000,0x0000,0,0,0,0,0,0,0
+    .hword   0x1800,0x0000,0x0000,0x5800,0x0000,0x0000,0x0000,0x0000,0x0000,0,0,0,0,0,0,0
+    .hword   0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x1800,0x7800,0x6800,0,0,0,0,0,0,0
+    .hword   0x2800,0x0000,0x0000,0x0000,0x9800,0x3800,0x0000,0x0000,0x5800,0,0,0,0,0,0,0
+    .hword   0x7800,0x0000,0x8800,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0,0,0,0,0,0,0
+    .hword   0x0000,0x0000,0x7800,0x0000,0x3800,0x2800,0x0000,0x4800,0x0000,0,0,0,0,0,0,0
+    .hword   0x3800,0x8800,0x2800,0x1800,0x0000,0x5800,0x6800,0x0000,0x0000,0,0,0,0,0,0,0
+    .hword   0x0000,0x4800,0x1800,0x0000,0x0000,0x9800,0x5800,0x2800,0x0000,0,0,0,0,0,0,0
+
+# huecos para cuadrar
+cuadricula4:
+     /* 9 filas de 16 entradas para facilitar la visualizacion y 16 bits por celda */
+    .hword   0x9800,0x6800,0x0000,0x0000,0x0000,0x0000,0x7800,0x0000,0x8800,0,0,0,0,0,0,0
+    .hword   0x8800,0x0000,0x0000,0x0000,0x0000,0x4800,0x3800,0x0000,0x0000,0,0,0,0,0,0,0
+    .hword   0x1800,0x0000,0x0000,0x5800,0x0000,0x0000,0x0000,0x0000,0x0000,0,0,0,0,0,0,0
+    .hword   0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x1800,0x7800,0x6800,0,0,0,0,0,0,0
+    .hword   0x2800,0x0000,0x0000,0x0000,0x9800,0x3800,0x0000,0x0000,0x5800,0,0,0,0,0,0,0
+    .hword   0x7800,0x0000,0x8800,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0,0,0,0,0,0,0
+    .hword   0x0000,0x0000,0x7800,0x0000,0x3800,0x2800,0x0000,0x4800,0x0000,0,0,0,0,0,0,0
+    .hword   0x3800,0x8800,0x2800,0x1800,0x0000,0x5800,0x6800,0x0000,0x0000,0,0,0,0,0,0,0
+    .hword   0x0000,0x4800,0x1800,0x0000,0x0000,0x9800,0x5800,0x2800,0x0000,0,0,0,0,0,0,0
+
+# huecos para cuadrar
+cuadricula5:
+     /* 9 filas de 16 entradas para facilitar la visualizacion y 16 bits por celda */
+    .hword   0x9800,0x6800,0x0000,0x0000,0x0000,0x0000,0x7800,0x0000,0x8800,0,0,0,0,0,0,0
+    .hword   0x8800,0x0000,0x0000,0x0000,0x0000,0x4800,0x3800,0x0000,0x0000,0,0,0,0,0,0,0
+    .hword   0x1800,0x0000,0x0000,0x5800,0x0000,0x0000,0x0000,0x0000,0x0000,0,0,0,0,0,0,0
+    .hword   0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x1800,0x7800,0x6800,0,0,0,0,0,0,0
+    .hword   0x2800,0x0000,0x0000,0x0000,0x9800,0x3800,0x0000,0x0000,0x5800,0,0,0,0,0,0,0
+    .hword   0x7800,0x0000,0x8800,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0,0,0,0,0,0,0
+    .hword   0x0000,0x0000,0x7800,0x0000,0x3800,0x2800,0x0000,0x4800,0x0000,0,0,0,0,0,0,0
+    .hword   0x3800,0x8800,0x2800,0x1800,0x0000,0x5800,0x6800,0x0000,0x0000,0,0,0,0,0,0,0
+    .hword   0x0000,0x4800,0x1800,0x0000,0x0000,0x9800,0x5800,0x2800,0x0000,0,0,0,0,0,0,0
+
+# huecos para cuadrar
+cuadricula6:
      /* 9 filas de 16 entradas para facilitar la visualizacion y 16 bits por celda */
     .hword   0x9800,0x6800,0x0000,0x0000,0x0000,0x0000,0x7800,0x0000,0x8800,0,0,0,0,0,0,0
     .hword   0x8800,0x0000,0x0000,0x0000,0x0000,0x4800,0x3800,0x0000,0x0000,0,0,0,0,0,0,0
