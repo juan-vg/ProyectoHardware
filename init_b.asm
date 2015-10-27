@@ -134,7 +134,13 @@ stop:
 sudoku_recalcular_arm:
 		# saves the working registers
         # se puede modificar r0, r1, r2 y r3 sin guardarlos previamente.
-        STMFD   sp!, {r4-r11, lr}
+        mov ip, sp
+        STMFD   sp!, {r4-r10, fp, ip, lr, pc}
+
+        # @ de pc (la pila es FullDesc. -> Decr. Before -> la @ es ip - 4 )
+        sub fp, ip, #4
+
+        // TODO: mov fp, sp ??? (mirar posicion de sp, a ver si hay que sumar o restar posiciones)
 
         # guardar parametro opcion
         mov r4, r1
@@ -208,7 +214,7 @@ sudoku_recalcular_arm_recorre_fila_sigue:
         # SALIR
 
         # restore the original registers
-        LDMFD   sp!, {r4-r11, lr}
+        LDMFD   fp, {r4-r10, fp, sp, lr, pc}
 
         #return to the instruccion that called the rutine and to arm mode
         bx 	lr
@@ -219,7 +225,13 @@ sudoku_recalcular_arm_recorre_fila_sigue:
 sudoku_candidatos_arm:
 		# saves the working registers
         # se puede modificar r0, r1, r2 y r3 sin guardarlos previamente.
-        STMFD   sp!, {r4-r11}
+        mov ip, sp
+        STMFD   sp!, {r4-r10, fp, ip, lr, pc}
+
+        # @ de pc (la pila es FullDesc. -> Decr. Before -> la @ es ip - 4 )
+        sub fp, ip, #4
+
+        // TODO: mov fp, sp ??? (mirar posicion de sp, a ver si hay que sumar o restar posiciones)
 
         # obtener @ fila (de 32 en 32 bytes)
         # r3 (calc. fila) = r1 (param. fila) * 32
@@ -426,10 +438,10 @@ candidatos_arm_return:
 		# SALIR
 
         # restore the original registers
-        LDMFD   sp!, {r4-r11}
+        LDMDB   fp, {r4-r10, fp, sp, lr}
 
         #return to the instruccion that called the rutine and to arm mode
-        bx 	r14
+        bx 	lr
 
 ###############################################################################
 .arm
@@ -438,7 +450,13 @@ candidatos_arm_return:
 sudoku_candidatos_thumb:
 		# saves the working registers
         # se puede modificar r0, r1, r2 y r3 sin guardarlos previamente.
-        STMFD   sp!, {r4-r11, lr}
+        mov ip, sp
+        STMFD   sp!, {r4-r10, fp, ip, lr, pc}
+
+        # @ de pc (la pila es FullDesc. -> Decr. Before -> la @ es ip - 4 )
+        sub fp, ip, #4
+
+        // TODO: mov fp, sp ??? (mirar posicion de sp, a ver si hay que sumar o restar posiciones)
 
 		adr r3, sudoku_candidatos_thumb_thumb + 1
 		adr lr, sudoku_candidatos_thumb_vuelta
@@ -449,7 +467,7 @@ sudoku_candidatos_thumb_vuelta:
 		# SALIR
 
         # restore the original registers
-        LDMFD   sp!, {r4-r11, lr}
+        LDMFD   fp, {r4-r10, fp, sp, lr, pc}
 
         #return to the instruccion that called the rutine and to arm mode
         bx 	lr
