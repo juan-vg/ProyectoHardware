@@ -1,0 +1,257 @@
+
+PH_1_A.elf:     file format elf32-littlearm
+
+Sections:
+Idx Name          Size      VMA       LMA       File off  Algn
+  0 .text         00000114  0c000000  0c000000  00008000  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, CODE
+  1 .data         000000a0  0c000114  0c000114  00008114  2**0
+                  CONTENTS, ALLOC, LOAD, DATA
+  2 .debug_abbrev 00000073  00000000  00000000  000081b4  2**0
+                  CONTENTS, READONLY, DEBUGGING
+  3 .debug_info   000000d1  00000000  00000000  00008227  2**0
+                  CONTENTS, READONLY, DEBUGGING
+  4 .debug_line   000000af  00000000  00000000  000082f8  2**0
+                  CONTENTS, READONLY, DEBUGGING
+  5 .debug_macinfo 000020fc  00000000  00000000  000083a7  2**0
+                  CONTENTS, READONLY, DEBUGGING
+  6 .debug_loc    0000002c  00000000  00000000  0000a4a3  2**0
+                  CONTENTS, READONLY, DEBUGGING
+  7 .debug_pubnames 00000022  00000000  00000000  0000a4cf  2**0
+                  CONTENTS, READONLY, DEBUGGING
+  8 .debug_aranges 00000040  00000000  00000000  0000a4f8  2**3
+                  CONTENTS, READONLY, DEBUGGING
+  9 .debug_str    0000004f  00000000  00000000  0000a538  2**0
+                  CONTENTS, READONLY, DEBUGGING
+ 10 .comment      0000002a  00000000  00000000  0000a587  2**0
+                  CONTENTS, READONLY
+ 11 .ARM.attributes 00000030  00000000  00000000  0000a5b1  2**0
+                  CONTENTS, READONLY
+ 12 .debug_frame  00000030  00000000  00000000  0000a5e4  2**2
+                  CONTENTS, READONLY, DEBUGGING
+
+Disassembly of section .text:
+
+0c000000 <__c_copy_10>:
+// This function copies 10 words from one address to another
+// orig: pointer to the source block 
+// dest: pointer to the destination block
+//------------------------------------------------------------------------------------------------ 
+void __c_copy_10(int *orig, int *dest)
+{ 
+ c000000:	e1a0c00d 	mov	ip, sp
+ c000004:	e92dd800 	push	{fp, ip, lr, pc}
+ c000008:	e24cb004 	sub	fp, ip, #4
+ c00000c:	e24dd010 	sub	sp, sp, #16
+ c000010:	e50b0018 	str	r0, [fp, #-24]	; 0xffffffe8
+ c000014:	e50b101c 	str	r1, [fp, #-28]	; 0xffffffe4
+ int i; 
+ for(i=0;i<10;i++)
+ c000018:	e3a03000 	mov	r3, #0
+ c00001c:	e50b3010 	str	r3, [fp, #-16]
+ c000020:	ea00000c 	b	c000058 <__c_copy_10+0x58>
+ { 
+      	dest[i]=orig[i];
+ c000024:	e51b3010 	ldr	r3, [fp, #-16]
+ c000028:	e1a03103 	lsl	r3, r3, #2
+ c00002c:	e51b201c 	ldr	r2, [fp, #-28]	; 0xffffffe4
+ c000030:	e0823003 	add	r3, r2, r3
+ c000034:	e51b2010 	ldr	r2, [fp, #-16]
+ c000038:	e1a02102 	lsl	r2, r2, #2
+ c00003c:	e51b1018 	ldr	r1, [fp, #-24]	; 0xffffffe8
+ c000040:	e0812002 	add	r2, r1, r2
+ c000044:	e5922000 	ldr	r2, [r2]
+ c000048:	e5832000 	str	r2, [r3]
+// dest: pointer to the destination block
+//------------------------------------------------------------------------------------------------ 
+void __c_copy_10(int *orig, int *dest)
+{ 
+ int i; 
+ for(i=0;i<10;i++)
+ c00004c:	e51b3010 	ldr	r3, [fp, #-16]
+ c000050:	e2833001 	add	r3, r3, #1
+ c000054:	e50b3010 	str	r3, [fp, #-16]
+ c000058:	e51b3010 	ldr	r3, [fp, #-16]
+ c00005c:	e3530009 	cmp	r3, #9
+ c000060:	daffffef 	ble	c000024 <__c_copy_10+0x24>
+ { 
+      	dest[i]=orig[i];
+    } 
+} 
+ c000064:	e24bd00c 	sub	sp, fp, #12
+ c000068:	e89d6800 	ldm	sp, {fp, sp, lr}
+ c00006c:	e12fff1e 	bx	lr
+
+0c000070 <start>:
+.arm /*indicates that we are using the ARM instruction set */
+#------standard initial code
+# --- Setup interrupt / exception vectors
+.global	start
+start:
+      B       Reset_Handler
+ c000070:	eaffffff 	b	c000074 <Reset_Handler>
+
+0c000074 <Reset_Handler>:
+# Reset Handler:
+# the processor starts executing this code after system reset
+#######################################################################################################
+Reset_Handler:
+#
+        ldr		 sp,=STACK      /*  set up stack pointer (r13) */
+ c000074:	e59fd080 	ldr	sp, [pc, #128]	; c0000fc <th_copy_10+0x10>
+
+
+#bucle 'link_arm' realizado para medir el tiempo de 1000 iteraciones
+        mov r7, #1000
+ c000078:	e3a07ffa 	mov	r7, #1000	; 0x3e8
+
+0c00007c <link_arm>:
+
+link_arm:
+
+# colocamos los parámetros para la llamada a la primera función
+        LDR     r0, =scr        /*  r0 = pointer to source block */
+ c00007c:	e59f007c 	ldr	r0, [pc, #124]	; c000100 <th_copy_10+0x14>
+ # guardamos r0 en r4 porque al llamar a las funciones podemos perder su valor. Así lo podremos restaurar sin acceder a memoria
+        MOV 	r4, r0
+ c000080:	e1a04000 	mov	r4, r0
+        LDR     r1, =dst1       /*  r1 = pointer to destination block 1 */
+ c000084:	e59f1078 	ldr	r1, [pc, #120]	; c000104 <th_copy_10+0x18>
+
+#
+# PART 1: USING ARM CODE
+#
+
+       	BL		ARM_copy_10			/*FUNCTION CALL*/
+ c000088:	eb000012 	bl	c0000d8 <ARM_copy_10>
+
+       	subs r7, r7, #1
+ c00008c:	e2577001 	subs	r7, r7, #1
+       	bne		link_arm
+ c000090:	1afffff9 	bne	c00007c <link_arm>
+
+
+#bucle 'link_thumb' realizado para medir el tiempo de 1000 iteraciones
+        mov r7, #1000
+ c000094:	e3a07ffa 	mov	r7, #1000	; 0x3e8
+
+0c000098 <link_thumb>:
+#
+# PART 2: USING THUMB CODE
+#
+# colocamos los parámetros para la llamada a la segunda función porque ARM_copy_10 los ha podido eliminar
+# IMPORTANTE: si queremos tener un código modular debemos volver a poner los parámetros a pesar de que en teoría el 1 y el 2
+        MOV     r0, r4       /*  r0 = pointer to source block */
+ c000098:	e1a00004 	mov	r0, r4
+        LDR     r1, =dst2       /*  r1 = pointer to destination block 1 */
+ c00009c:	e59f1064 	ldr	r1, [pc, #100]	; c000108 <th_copy_10+0x1c>
+     	ADR		r3, th_copy_10+1 /* the last address bit is not really used to specify the address but to select between ARM and Thumb code */
+ c0000a0:	e28f3045 	add	r3, pc, #69	; 0x45
+		adr		r14,return		/* we store the return address in r14*/
+ c0000a4:	e28fe008 	add	lr, pc, #8
+		BX		r3				/* FUNCTION CALL, we jump to th_mul. +1 indicates that we want to switch to thumb */
+ c0000a8:	e12fff13 	bx	r3
+
+		subs r7, r7, #1
+ c0000ac:	e2577001 	subs	r7, r7, #1
+        bne     link_thumb
+ c0000b0:	1afffff8 	bne	c000098 <link_thumb>
+
+0c0000b4 <return>:
+
+
+return:
+
+#bucle 'link_c' realizado para medir el tiempo de 1000 iteraciones
+        mov r7, #1000
+ c0000b4:	e3a07ffa 	mov	r7, #1000	; 0x3e8
+
+0c0000b8 <link_c>:
+
+#
+# PART 3: USING A .C FUNCTION
+#
+# ponemos los parámetros de nuevo
+		MOV     r0, r4        /*  r0 = pointer to source block */
+ c0000b8:	e1a00004 	mov	r0, r4
+		LDR     r1, =dst3        /*  r1 = pointer to destination block 1 */
+ c0000bc:	e59f1048 	ldr	r1, [pc, #72]	; c00010c <th_copy_10+0x20>
+# function __c_copy is in copy.c
+.extern     __c_copy_10
+        ldr         r3, = __c_copy_10
+ c0000c0:	e59f3048 	ldr	r3, [pc, #72]	; c000110 <th_copy_10+0x24>
+        mov         lr, pc
+ c0000c4:	e1a0e00f 	mov	lr, pc
+# FUNCTION CALL the parameters are stored in r0 and r1
+# If there are 4 or less parameters when calling a C function the compiler assumes that they have
+# been stored in r0-r3. If there are more parameters you have to store them in the data stack using the stack pointer
+		bx          r3
+ c0000c8:	e12fff13 	bx	r3
+
+		subs r7, r7, #1
+ c0000cc:	e2577001 	subs	r7, r7, #1
+        bne     link_c
+ c0000d0:	1afffff8 	bne	c0000b8 <link_c>
+
+0c0000d4 <stop>:
+
+
+stop:
+ 		B     	stop    	/*  end of program */
+ c0000d4:	eafffffe 	b	c0000d4 <stop>
+
+0c0000d8 <ARM_copy_10>:
+
+#######################################################################################################
+ARM_copy_10:
+        #  saves the working registers
+        # Recordad que puede modificar r0, r1, r2 y r3 sin guardarlos previamente.
+        STMFD   sp!, {r4-r11}
+ c0000d8:	e92d0ff0 	push	{r4, r5, r6, r7, r8, r9, sl, fp}
+
+		# Poned el código aquí: sólo hacen falta dos instrucciones
+		LDMIA r0, {r2-r11}
+ c0000dc:	e8900ffc 	ldm	r0, {r2, r3, r4, r5, r6, r7, r8, r9, sl, fp}
+		STMIA r1, {r2-r11}
+ c0000e0:	e8810ffc 	stm	r1, {r2, r3, r4, r5, r6, r7, r8, r9, sl, fp}
+
+		# restore the original registers
+        LDMFD   sp!, {r4-r11}
+ c0000e4:	e8bd0ff0 	pop	{r4, r5, r6, r7, r8, r9, sl, fp}
+        #return to the instruccion that called the rutine and to arm mode
+        bx 	r14
+ c0000e8:	e12fff1e 	bx	lr
+
+0c0000ec <th_copy_10>:
+# De nuevo, al ser un nodo hoja hacemos un marco simplificado: sólo los registros que toca y debe restaurar
+#######################################################################################################
+/*indicates that we are using the thumb instruction set */
+.thumb
+th_copy_10:
+		push	{r4-r7}
+ c0000ec:	b4f0      	push	{r4, r5, r6, r7}
+
+		# poned aquí el código, como no podemos leer y escribir 10 palabras de golpe lo haremos en dos veces.
+		LDMIA r0!, {r2-r6}
+ c0000ee:	c87c      	ldmia	r0!, {r2, r3, r4, r5, r6}
+		STMIA r1!, {r2-r6}
+ c0000f0:	c17c      	stmia	r1!, {r2, r3, r4, r5, r6}
+		# hay que hacer wb(!) posiblemente por no poder acceder a todos los registros,
+		# impidiendo que se mantenga la @ virtualmente en alguno.
+		LDMIA r0!, {r2-r6}
+ c0000f2:	c87c      	ldmia	r0!, {r2, r3, r4, r5, r6}
+		STMIA r1!, {r2-r6}
+ c0000f4:	c17c      	stmia	r1!, {r2, r3, r4, r5, r6}
+
+		#restaurar
+		pop		{r4-r7} /*restores the registers*/
+ c0000f6:	bcf0      	pop	{r4, r5, r6, r7}
+	    bx		r14	/* this is the return instrucction*/
+ c0000f8:	4770      	bx	lr
+ c0000fa:	0000      	.short	0x0000
+ c0000fc:	0c7ff000 	.word	0x0c7ff000
+ c000100:	0c000114 	.word	0x0c000114
+ c000104:	0c00013c 	.word	0x0c00013c
+ c000108:	0c000164 	.word	0x0c000164
+ c00010c:	0c00018c 	.word	0x0c00018c
+ c000110:	0c000000 	.word	0x0c000000

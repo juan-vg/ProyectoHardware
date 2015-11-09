@@ -1,0 +1,206 @@
+   1              	# 1 "../init.asm"
+   1              	
+   0              	
+   0              	
+   0              	
+   2              	    .extern main
+   3              	    .equ STACK, 0x0c7ff000
+   4              	.text
+   5              	.equ	num, 10  /* this is used to indicate the number of words to copy */
+   6              	#        ENTRY            		/*  mark the first instruction to call */
+   7              	.arm /*indicates that we are using the ARM instruction set */
+   8              	#------standard initial code
+   9              	# --- Setup interrupt / exception vectors
+  10              	.global	start
+  11              	start:
+  12 0000 FFFFFFEA 	      B       Reset_Handler
+  13              	/* In this version we do not use the following handlers */
+  14              	###################################################################################################
+  15              	#-----------Undefined_Handler:
+  16              	#      B       Undefined_Handler
+  17              	#----------SWI_Handler:
+  18              	#      B       SWI_Handler
+  19              	#----------Prefetch_Handler:
+  20              	#      B       Prefetch_Handler
+  21              	#----------Abort_Handler:
+  22              	#      B       Abort_Handler
+  23              	#         NOP      /* Reserved vector */
+  24              	#----------IRQ_Handler:
+  25              	#      B       IRQ_Handler
+  26              	#----------FIQ_Handler:
+  27              	#      B       FIQ_Handler
+  28              	###################################################################################################
+  29              	# Reset Handler:
+  30              	# the processor starts executing this code after system reset
+  31              	###################################################################################################
+  32              	Reset_Handler:
+  33              	#
+  34 0004 80D09FE5 	        ldr		 sp,=STACK      /*  set up stack pointer (r13) */
+  35              	
+  36              	
+  37              	#bucle 'link_arm' realizado para medir el tiempo de 1000 iteraciones
+  38 0008 FA7FA0E3 	        mov r7, #1000
+  39              	
+  40              	link_arm:
+  41              	
+  42              	# colocamos los parámetros para la llamada a la primera función
+  43 000c 7C009FE5 	        LDR     r0, =scr        /*  r0 = pointer to source block */
+  44              	 # guardamos r0 en r4 porque al llamar a las funciones podemos perder su valor. Así lo podremos res
+  45 0010 0040A0E1 	        MOV 	r4, r0
+  46 0014 78109FE5 	        LDR     r1, =dst1       /*  r1 = pointer to destination block 1 */
+  47              	
+  48              	#
+  49              	# PART 1: USING ARM CODE
+  50              	#
+  51              	
+  52 0018 120000EB 	       	BL		ARM_copy_10			/*FUNCTION CALL*/
+  53              	
+  54 001c 017057E2 	       	subs r7, r7, #1
+  55 0020 F9FFFF1A 	       	bne		link_arm
+  56              	
+  57              	
+  58              	#bucle 'link_thumb' realizado para medir el tiempo de 1000 iteraciones
+  59 0024 FA7FA0E3 	        mov r7, #1000
+  60              	
+  61              	link_thumb:
+  62              	#
+  63              	# PART 2: USING THUMB CODE
+  64              	#
+  65              	# colocamos los parámetros para la llamada a la segunda función porque ARM_copy_10 los ha podido el
+  66              	# IMPORTANTE: si queremos tener un código modular debemos volver a poner los parámetros a pesar de 
+  67 0028 0400A0E1 	        MOV     r0, r4       /*  r0 = pointer to source block */
+  68 002c 64109FE5 	        LDR     r1, =dst2       /*  r1 = pointer to destination block 1 */
+  69 0030 45308FE2 	     	ADR		r3, th_copy_10+1 /* the last address bit is not really used to specify the address but t
+  70 0034 08E08FE2 			adr		r14,return		/* we store the return address in r14*/
+  71 0038 13FF2FE1 			BX		r3				/* FUNCTION CALL, we jump to th_mul. +1 indicates that we want to switch to thumb */
+  72              	
+  73 003c 017057E2 			subs r7, r7, #1
+  74 0040 F8FFFF1A 	        bne     link_thumb
+  75              	
+  76              	
+  77              	return:
+  78              	
+  79              	#bucle 'link_c' realizado para medir el tiempo de 1000 iteraciones
+  80 0044 FA7FA0E3 	        mov r7, #1000
+  81              	
+  82              	link_c:
+  83              	
+  84              	#
+  85              	# PART 3: USING A .C FUNCTION
+  86              	#
+  87              	# ponemos los parámetros de nuevo
+  88 0048 0400A0E1 			MOV     r0, r4        /*  r0 = pointer to source block */
+  89 004c 48109FE5 			LDR     r1, =dst3        /*  r1 = pointer to destination block 1 */
+  90              	# function __c_copy is in copy.c
+  91              	.extern     __c_copy_10
+  92 0050 48309FE5 	        ldr         r3, = __c_copy_10
+  93 0054 0FE0A0E1 	        mov         lr, pc
+  94              	# FUNCTION CALL the parameters are stored in r0 and r1
+  95              	# If there are 4 or less parameters when calling a C function the compiler assumes that they have
+  96              	# been stored in r0-r3. If there are more parameters you have to store them in the data stack using
+  97 0058 13FF2FE1 			bx          r3
+  98              	
+  99 005c 017057E2 			subs r7, r7, #1
+ 100 0060 F8FFFF1A 	        bne     link_c
+ 101              	
+ 102              	
+ 103              	stop:
+ 104 0064 FEFFFFEA 	 		B     	stop    	/*  end of program */
+ 105              	###################################################################################################
+ 106              	# Función ARM: copia 10 palabras de la dirección indicada en r0 a la indicada por r1
+ 107              	# debería crear un marco de pila con la misma estructura que en el resto de llamadas a funciones
+ 108              	# pero como es un nodo hoja (no llama a ninguna función) vamos a hacer un marco simplificado: sólo 
+ 109              	# registros que utiliza y que no tiene permiso para alterar.
+ 110              	
+ 111              	###################################################################################################
+ 112              	ARM_copy_10:
+ 113              	        #  saves the working registers
+ 114              	        # Recordad que puede modificar r0, r1, r2 y r3 sin guardarlos previamente.
+ 115 0068 F00F2DE9 	        STMFD   sp!, {r4-r11}
+ 116              	
+ 117              			# Poned el código aquí: sólo hacen falta dos instrucciones
+ 118 006c FC0F90E8 			LDMIA r0, {r2-r11}
+ 119 0070 FC0F81E8 			STMIA r1, {r2-r11}
+ 120              	
+ 121              			# restore the original registers
+ 122 0074 F00FBDE8 	        LDMFD   sp!, {r4-r11}
+ 123              	        #return to the instruccion that called the rutine and to arm mode
+ 124 0078 1EFF2FE1 	        bx 	r14
+ 125              	###################################################################################################
+ 126              	# Función thumb: copia 10 palabras de la dirección indicada en r0 a la indicada por r1
+ 127              	# De nuevo, al ser un nodo hoja hacemos un marco simplificado: sólo los registros que toca y debe r
+ 128              	###################################################################################################
+ 129              	/*indicates that we are using the thumb instruction set */
+ 130              	.thumb
+ 131              	th_copy_10:
+ 132 007c F0B4     			push	{r4-r7}
+ 133              	
+ 134              			# poned aquí el código, como no podemos leer y escribir 10 palabras de golpe lo haremos en dos ve
+ 135 007e 7CC8     			LDMIA r0!, {r2-r6}
+ 136 0080 7CC1     			STMIA r1!, {r2-r6}
+ 137              			# hay que hacer wb(!) posiblemente por no poder acceder a todos los registros,
+ 138              			# impidiendo que se mantenga la @ virtualmente en alguno.
+ 139 0082 7CC8     			LDMIA r0!, {r2-r6}
+ 140 0084 7CC1     			STMIA r1!, {r2-r6}
+ 141              	
+ 142              			#restaurar
+ 143 0086 F0BC     			pop		{r4-r7} /*restores the registers*/
+ 144 0088 7047     		    bx		r14	/* this is the return instrucction*/
+ 145              	
+ 146              	###################################################################################################
+ 147              	#        AREA BlockData, DATA, READWRITE
+ 148              	#	scr: source block (10 words)
+ 149              	#	dst1: destination block 1 (10 words)
+ 150              	#	dst2: destination block 2 (10 words)
+ 151              	#	dst3: destination block 3 (10 words)
+ 152              	###################################################################################################
+ 153 008a 0000     	.data
+ 154              	.ltorg /*guarantees the alignment*/
+ 155              	scr:
+ 156 0000 01000000 	     .long     1,2,3,4,5,6,7,8,9,10
+ 156      02000000 
+ 156      03000000 
+ 156      04000000 
+ 156      05000000 
+ 157              	dst1:
+ 158 0028 00000000 	     .long     0,0,0,0,0,0,0,0,0,0
+ 158      00000000 
+ 158      00000000 
+ 158      00000000 
+ 158      00000000 
+ 159              	dst2:
+ 160 0050 00000000 	     .long     0,0,0,0,0,0,0,0,0,0
+ 160      00000000 
+ 160      00000000 
+ 160      00000000 
+ 160      00000000 
+ 161              	dst3:
+ 162 0078 00000000 		 .long	   0,0,0,0,0,0,0,0,0,0
+ 162      00000000 
+ 162      00000000 
+ 162      00000000 
+ 162      00000000 
+ 163              	.end
+DEFINED SYMBOLS
+         ../init.asm:3      *ABS*:0c7ff000 STACK
+         ../init.asm:5      *ABS*:0000000a num
+         ../init.asm:11     .text:00000000 start
+         ../init.asm:32     .text:00000004 Reset_Handler
+         ../init.asm:12     .text:00000000 $a
+         ../init.asm:40     .text:0000000c link_arm
+         ../init.asm:155    .data:00000000 scr
+         ../init.asm:157    .data:00000028 dst1
+         ../init.asm:112    .text:00000068 ARM_copy_10
+         ../init.asm:61     .text:00000028 link_thumb
+         ../init.asm:159    .data:00000050 dst2
+         ../init.asm:131    .text:0000007c th_copy_10
+         ../init.asm:77     .text:00000044 return
+         ../init.asm:82     .text:00000048 link_c
+         ../init.asm:161    .data:00000078 dst3
+         ../init.asm:103    .text:00000064 stop
+         ../init.asm:132    .text:0000007c $t
+         ../init.asm:153    .text:0000008a $d
+                   .debug_aranges:0000000c $d
+
+UNDEFINED SYMBOLS
+__c_copy_10

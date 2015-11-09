@@ -1,0 +1,90 @@
+   1              		.cpu arm7tdmi
+   2              		.fpu softvfp
+   3              		.eabi_attribute 20, 1
+   4              		.eabi_attribute 21, 1
+   5              		.eabi_attribute 23, 3
+   6              		.eabi_attribute 24, 1
+   7              		.eabi_attribute 25, 1
+   8              		.eabi_attribute 26, 1
+   9              		.eabi_attribute 30, 6
+  10              		.eabi_attribute 18, 4
+  11              		.file	"copy.c"
+  21              	.Ltext0:
+  22              		.file 1 "../copy.c"
+ 965              		.align	2
+ 966              		.global	__c_copy_10
+ 968              	__c_copy_10:
+ 969              	.LFB0:
+   1:../copy.c     **** //------------------------------------------------------------------------------------------------ 
+   2:../copy.c     **** //Function Name: __c_copy
+   3:../copy.c     **** // This function copies 10 words from one address to another
+   4:../copy.c     **** // orig: pointer to the source block 
+   5:../copy.c     **** // dest: pointer to the destination block
+   6:../copy.c     **** //------------------------------------------------------------------------------------------------ 
+   7:../copy.c     **** void __c_copy_10(int *orig, int *dest)
+   8:../copy.c     **** { 
+ 970              		.loc 1 8 0
+ 971              		.cfi_startproc
+ 972              		@ Function supports interworking.
+ 973              		@ args = 0, pretend = 0, frame = 16
+ 974              		@ frame_needed = 1, uses_anonymous_args = 0
+ 975 0000 0DC0A0E1 		mov	ip, sp
+ 976              	.LCFI0:
+ 977              		.cfi_def_cfa_register 12
+ 978 0004 00D82DE9 		stmfd	sp!, {fp, ip, lr, pc}
+ 979 0008 04B04CE2 		sub	fp, ip, #4
+ 980              		.cfi_offset 14, -8
+ 981              		.cfi_offset 13, -12
+ 982              		.cfi_offset 11, -16
+ 983              	.LCFI1:
+ 984              		.cfi_def_cfa 11, 4
+ 985 000c 10D04DE2 		sub	sp, sp, #16
+ 986 0010 18000BE5 		str	r0, [fp, #-24]
+ 987 0014 1C100BE5 		str	r1, [fp, #-28]
+   9:../copy.c     ****  int i; 
+  10:../copy.c     ****  for(i=0;i<10;i++)
+ 988              		.loc 1 10 0
+ 989 0018 0030A0E3 		mov	r3, #0
+ 990 001c 10300BE5 		str	r3, [fp, #-16]
+ 991 0020 0C0000EA 		b	.L2
+ 992              	.L3:
+  11:../copy.c     ****  { 
+  12:../copy.c     ****       	dest[i]=orig[i];
+ 993              		.loc 1 12 0 discriminator 2
+ 994 0024 10301BE5 		ldr	r3, [fp, #-16]
+ 995 0028 0331A0E1 		mov	r3, r3, asl #2
+ 996 002c 1C201BE5 		ldr	r2, [fp, #-28]
+ 997 0030 033082E0 		add	r3, r2, r3
+ 998 0034 10201BE5 		ldr	r2, [fp, #-16]
+ 999 0038 0221A0E1 		mov	r2, r2, asl #2
+ 1000 003c 18101BE5 		ldr	r1, [fp, #-24]
+ 1001 0040 022081E0 		add	r2, r1, r2
+ 1002 0044 002092E5 		ldr	r2, [r2, #0]
+ 1003 0048 002083E5 		str	r2, [r3, #0]
+  10:../copy.c     ****  for(i=0;i<10;i++)
+ 1004              		.loc 1 10 0 discriminator 2
+ 1005 004c 10301BE5 		ldr	r3, [fp, #-16]
+ 1006 0050 013083E2 		add	r3, r3, #1
+ 1007 0054 10300BE5 		str	r3, [fp, #-16]
+ 1008              	.L2:
+  10:../copy.c     ****  for(i=0;i<10;i++)
+ 1009              		.loc 1 10 0 is_stmt 0 discriminator 1
+ 1010 0058 10301BE5 		ldr	r3, [fp, #-16]
+ 1011 005c 090053E3 		cmp	r3, #9
+ 1012 0060 EFFFFFDA 		ble	.L3
+  13:../copy.c     ****     } 
+  14:../copy.c     **** } 
+ 1013              		.loc 1 14 0 is_stmt 1
+ 1014 0064 0CD04BE2 		sub	sp, fp, #12
+ 1015 0068 00689DE8 		ldmfd	sp, {fp, sp, lr}
+ 1016 006c 1EFF2FE1 		bx	lr
+ 1017              		.cfi_endproc
+ 1018              	.LFE0:
+ 1020              	.Letext0:
+DEFINED SYMBOLS
+                            *ABS*:00000000 copy.c
+C:\Users\casa\AppData\Local\Temp\ccRkWY5l.s:965    .text:00000000 $a
+C:\Users\casa\AppData\Local\Temp\ccRkWY5l.s:968    .text:00000000 __c_copy_10
+                     .debug_frame:00000010 $d
+
+NO UNDEFINED SYMBOLS
