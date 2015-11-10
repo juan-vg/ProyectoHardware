@@ -28,7 +28,7 @@ void Eint4567_init(void)
 	rEXTINTPND = 0xf;       // Borra EXTINTPND escribiendo 1s en el propio registro
 	rINTMOD    = 0x0;		// Configura las linas como de tipo IRQ
 	rINTCON    = 0x1;	    // Habilita int. vectorizadas y la linea IRQ (FIQ no)
-	rINTMSK    = ~(BIT_GLOBAL | BIT_EINT4567 | BIT_TIMER0 | BIT_TIMER2); // Enmascara todas las lineas excepto eint4567, el bit global y el timer0
+	rINTMSK    &= ~(BIT_EINT4567); // Enmascara todas las lineas excepto eint4567, el bit global y el timer0
 
 	/* Establece la rutina de servicio para Eint4567 */
 	pISR_EINT4567 = (int)Eint4567_ISR;

@@ -211,6 +211,10 @@ l2:
 	add		sp,sp,#4
 	subs	pc,lr,#4
 
+
+ISR_Exception:
+
+
 #****************************************************
 #*	START											*
 #****************************************************
@@ -270,6 +274,25 @@ ResetHandler:
     #;****************************************************
     ldr	    r0,=HandleIRQ		/* This routine is needed */
     ldr	    r1,=IsrIRQ			/* if there isn't 'subs pc,lr,#4' at 0x18, 0x1c */
+    str	    r1,[r0]
+
+    #;****************************************************
+    #;*	Setup Exception handler								*
+    #;****************************************************
+
+    // UNDEF
+    ldr	    r0,=HandleUndef
+    ldr	    r1,=ISR_Exception
+    str	    r1,[r0]
+
+    // DATA ABORT
+    ldr	    r0,=HandleDabort
+    ldr	    r1,=ISR_Exception
+    str	    r1,[r0]
+
+    // PREFETCH ABORT
+    ldr	    r0,=HandlePabort
+    ldr	    r1,=ISR_Exception
     str	    r1,[r0]
 
     #********************************************************
