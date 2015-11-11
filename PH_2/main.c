@@ -9,6 +9,7 @@
 #include "44blib.h"
 #include "44b.h"
 #include "stdio.h"
+#include <inttypes.h>
 
 /*--- variables globales ---*/
 extern uint8_t switch_leds;
