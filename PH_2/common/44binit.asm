@@ -211,9 +211,38 @@ l2:
 	add		sp,sp,#4
 	subs	pc,lr,#4
 
-
+.extern mostrar_error_8led
 ISR_Exception:
 
+	sub sp, sp, #4
+
+	# almacenar r0 y r4
+	stmfd   sp!,{r0, r4}
+
+	mrs	    r0,cpsr
+    bic	    r0,r0,#MODEMASK
+
+	# comparar con valor intermedio entre ABORT y UNDEF
+    cmp r0, 0x18
+
+	#UNDEF
+	movgt r0, #0
+
+	#DATA ABORT
+	#mov r0, #1
+	#PREFETCH ABORT
+	movlt r0, #2
+
+	# obtiene @ de funcion c que muestra la excepcion
+	ldr r4, =mostrar_error_8led
+	str r4,[sp,#4]
+
+	# saltar r0
+	add sp, sp, #4
+
+	# no se restaura r0 porque es un parametro ATPCS
+	# no se actualiza sp, r0 sigue estando una posicion por encima de la cima
+	ldmfd   sp,{r4, pc}
 
 #****************************************************
 #*	START											*

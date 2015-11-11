@@ -12,7 +12,7 @@
 #include <inttypes.h>
 
 /*--- variables globales ---*/
-extern uint8_t switch_leds;
+extern uint8_t switch_timer;
 
 /*--- funciones externas ---*/
 extern void leds_off();
@@ -67,10 +67,10 @@ void Main(void)
 	while (1)
 	{
 		/* Cambia los leds con cada interrupcion del temporizador */
-		if (switch_leds == 1)
+		if (switch_timer == 1)
 		{
 			leds_switch();
-			switch_leds = 0;
+			switch_timer = 0;
 		}
 	}
 }

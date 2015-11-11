@@ -10,9 +10,21 @@
 #include "44blib.h"
 #include <inttypes.h>
 
+
+
 /*--- variables globales ---*/
-uint8_t switch_leds = 0;
+uint8_t switch_timer = 0;
 uint32_t timer2_num_int = 0;
+
+int8_t tiempo_botones = 0;
+
+/*--- elementos externos ---*/
+extern uint8_t estado_botones;
+extern unsigned int int_count;
+extern uint8_t sentido;
+extern uint8_t pulsado;
+
+extern D8Led_symbol(int);
 
 /*--- declaracion de funciones ---*/
 void timer_ISR(void) __attribute__((interrupt("IRQ")));
@@ -28,20 +40,72 @@ int alarma = -1;
 
 /*--- codigo de las funciones ---*/
 void timer_ISR(void) {
-    switch_leds = 1;
+    switch_timer = 1;
 
     /* borrar bit en I_ISPC para desactivar la solicitud de interrupción*/
     rI_ISPC |= BIT_TIMER0; // BIT_TIMER0 está definido en 44b.h y pone un uno en el bit 13 que correponde al Timer0
 }
 
 void timer2_ISR(void) {
+
+    uint32_t auxData = 0;
+
+    auxData |= estado_botones << 16;
+    auxData |= pulsado << 8;
+    auxData |= tiempo_botones;
+
+    push_debug(1, auxData);
+
     timer2_num_int++;
 
-    // cuando pase el tiempo la alarma se desactiva, informando al mismo tiempo
-    // que ya ha pasdo el tiempo
+    // cuando pase el tiempo la alarma se desactiva
     if (alarma == timer2_num_int) {
-        alarma = -1;
+
+        if(estado_botones == 1){
+            programar_alarma(10);
+            tiempo_botones++;
+            estado_botones = 2;
+        }
+
+        // despues de 300 ms (100 + 200) como maximo
+        else if(estado_botones == 2 && pulsado == 1 && tiempo_botones < 20){
+
+            //leer bits 6 y 7 (pulsadores)
+            //cuando NO estan pulsados valen 1
+            if((rPDATG & 0xC0) == 0xC0){
+                pulsado = 0;
+            }
+
+            programar_alarma(10);
+            tiempo_botones++;
+        }
+
+        // despues de mas de 200 ms (mas los 100ms iniciales) -> siguiente
+        else if(estado_botones == 2 && pulsado == 1 && tiempo_botones >= 20){
+
+            // para comparar con 300ms solo cuando se mantenga pulsado
+            tiempo_botones = -10;
+
+            // avanza o retrocede una posicion
+            int_count = int_count + sentido;
+            D8Led_symbol(int_count&0x000f);
+        }
+
+        else if(estado_botones == 2 && pulsado == 0){
+            // trd = 100ms
+            programar_alarma(100);
+            estado_botones = 3;
+        }
+
+        else if(estado_botones == 3){
+            // vuelve a activar las IRQs de botones
+            rINTMSK    &= ~(BIT_EINT4567);
+            estado_botones = 0;
+            tiempo_botones = 0;
+        }
     }
+
+
 
     /* borrar bit en I_ISPC para desactivar la solicitud de interrupción*/
     rI_ISPC |= BIT_TIMER2; // BIT_TIMER2 está definido en 44b.h y pone un uno en el bit 11 que correponde al Timer2
@@ -84,11 +148,13 @@ void Timer2_Inicializar(void) {
     // Configura el Timer2
     rTCFG0 &= ~0xFF00; // ajusta el preescalado
     rTCFG1 &= ~0x0F00; // selecciona la entrada del mux que proporciona el reloj. La 00 corresponde a un divisor de 1/2.
-    rTCNTB2 = 65535; // valor inicial de cuenta (la cuenta es descendente)
+
+    // CNT = 32000 -> provoca interrupciones cada 1ms
+    rTCNTB2 = 32000; // valor inicial de cuenta (la cuenta es descendente)
     rTCMPB2 = 0; // valor de comparación
 
     /* precalcula el tiempo por cada ciclo */
-    tiempo_interr = (rTCNTB2 * 0.03125);
+    tiempo_interr = (rTCNTB2 / 32);
 
 }
 
@@ -120,12 +186,14 @@ void Timer2_Empezar(void) {
  *
  */
 int Timer2_Leer(void) {
-    int tiempo_ticks = ((rTCNTB2 - rTCNTO2 )/ 32);
+    int tiempo_ticks = ((rTCNTB2 - rTCNTO2 ) / 32);
     return timer2_num_int * tiempo_interr + tiempo_ticks;
 }
 
-// timer2_num_int == 1 => 2.047 ms
+/**
+ * Establece una alarma asincrona con precision de 1ms
+ */
 void programar_alarma(int ms) {
-    alarma = timer2_num_int + ms / 2;
+    alarma = timer2_num_int + ms;
 }
 

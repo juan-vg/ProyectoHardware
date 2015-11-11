@@ -28,20 +28,20 @@ uint32_t* pila_debug_pointer = (uint32_t*) PILA_DEBUG_INI;
 
 /*************/
 
+enum {
+    cero = ~0xED, uno = ~0x60, dos = ~0xCE, E = ~0x8F, blank = ~0x00
+};
+
 extern char Image_RW_Limit[];
 volatile unsigned char *downPt;
 unsigned int fileSize;
-void *mallocPt=Image_RW_Limit;
+void *mallocPt = Image_RW_Limit;
 
 void (*restart)(void) = (void (*)(void))0x0;
-void (*run)(void) = (void (*)(void))DOWNLOAD_ADDRESS;
-
-
-void ISR_Undef(void) __attribute__((interrupt("UNDEF")));
-void ISR_Abort(void) __attribute__((interrupt("ABORT")));
+void (*run)(void) = (void (*)(void)) DOWNLOAD_ADDRESS;
 
 //--------------------------------SYSTEM---------------------------------//
-static int delayLoopCount=400;
+static int delayLoopCount = 400;
 
 void Delay(int time)
 // time=0: adjust the Delay function by WatchDog timer
@@ -49,71 +49,63 @@ void Delay(int time)
 // 100us resolution
 // Delay(10) -> 10*100us resolution
 {
-    int i,adjust = 0;
-    if (time == 0)
-    {
+    int i, adjust = 0;
+    if (time == 0) {
         time = 200;
         adjust = 1;
         delayLoopCount = 400;
-        rWTCON = ((MCLK/1000000 - 1)<<8) | (2<<3);	// 1M/64,Watch-dog,nRESET,interrupt disable//
+        rWTCON = ((MCLK / 1000000 - 1) << 8) | (2 << 3);// 1M/64,Watch-dog,nRESET,interrupt disable//
         rWTDAT = 0xffff;
         rWTCNT = 0xffff;
-        rWTCON = ((MCLK/1000000 - 1)<<8)|(2<<3)|(1<<5); // 1M/64,Watch-dog enable,nRESET,interrupt disable //
+        rWTCON = ((MCLK / 1000000 - 1) << 8) | (2 << 3) | (1 << 5); // 1M/64,Watch-dog enable,nRESET,interrupt disable //
     }
-    for (; time>0; time--)
-        for (i = 0; i < delayLoopCount; i++);
-    if (adjust == 1)
-    {
-        rWTCON = ((MCLK/1000000 - 1)<<8)|(2<<3);
+    for (; time > 0; time--)
+        for (i = 0; i < delayLoopCount; i++)
+            ;
+    if (adjust == 1) {
+        rWTCON = ((MCLK / 1000000 - 1) << 8) | (2 << 3);
         i = 0xffff - rWTCNT;   //  1count/16us?????????//
-        delayLoopCount = 8000000/(i*64);	//400*100/(i*64/200)   //
+        delayLoopCount = 8000000 / (i * 64);	//400*100/(i*64/200)   //
     }
 }
 
-void DelayMs(int ms_time)
-{
-    int i;
-
-    for (i = 0; i < 1000*ms_time ; i++)
-        ;
-}
-
-void ISR_Undef(void)
-{
-    mostrar_error_8led();
-}
-
-void ISR_Abort(void)
-{
-    mostrar_error_8led();
-}
-
-void mostrar_error_8led(){
+void mostrar_error_8led(uint8_t error) {
 
     uint8_t mostrar_error = 0;
+    uint8_t codigo;
 
-    while(1){
+    if(error == 0){
+        codigo = cero;
+    } else if (error == 1){
+        codigo = uno;
+    } else {
+        codigo = dos;
+    }
 
-        if (switch_leds == 1)
-        {
+    while (1) {
 
-            if(mostrar_error == 1){
+        if (switch_timer == 1) {
+
+            if (mostrar_error == 0) {
                 D8Led_symbol(E);
-                mostrar_error = 0;
+                mostrar_error = 1;
+
+            } else if (mostrar_error == 1) {
+                D8Led_symbol(codigo);
+                mostrar_error = 2;
 
             } else {
                 D8Led_symbol(blank);
-                mostrar_error = 1;
+                mostrar_error = 0;
             }
 
-            switch_leds = 0;
+            switch_timer = 0;
         }
     }
 }
 
 //------------------------PORTS------------------------------//
-void Port_Init(void)
-{
+void Port_Init(void) {
     //CAUTION:Follow the configuration order for setting the ports.
     // 1) setting value
     // 2) setting control register
@@ -148,15 +140,15 @@ void Port_Init(void)
     //   00		00		00		00		11		11		11		11
     rPDATC = 0xff00;
     rPCONC = 0x0ff0ffff;
-    rPUPC  = 0x30ff;	//PULL UP RESISTOR should be enabled to I/O
+    rPUPC = 0x30ff;	//PULL UP RESISTOR should be enabled to I/O
 
     // PORT D GROUP
     // PORT D GROUP(I/O OR LCD)
     // BIT7		6		5		4		3		2		1		0
     //	VF		VM		VLINE	VCLK	VD3		VD2		VD1		VD0
     //	00		00		00		00		00		00		00		00
-    rPDATD= 0xff;
-    rPCOND= 0xaaaa;
+    rPDATD = 0xff;
+    rPCOND = 0xaaaa;
     rPUPD = 0x0;
     // These pins must be set only after CPU's internal LCD controller is enable
 
@@ -164,9 +156,9 @@ void Port_Init(void)
     // Bit	8		7		6		5		4		3		2		1		0
     //  	CODECLK	LED4	LED5	LED6	LED7	BEEP	RXD0	TXD0	LcdDisp
     //  	10		01		01		01		01		01		10		10		01
-    rPDATE	= 0x1ff;
-    rPCONE	= 0x25529;
-    rPUPE	= 0x6;
+    rPDATE = 0x1ff;
+    rPCONE = 0x25529;
+    rPUPE = 0x6;
 
     // PORT F GROUP
     // Bit8		7		6		5		 4		3		2		1		0
@@ -174,7 +166,7 @@ void Port_Init(void)
     // 100		100		100		100		00		00		00		10		10
     rPDATF = 0x0;
     rPCONF = 0x252a;
-    rPUPF  = 0x0;
+    rPUPF = 0x0;
 
     // PORT G GROUP
     // BIT7		6		5		4		3		2		1		0
@@ -183,16 +175,15 @@ void Port_Init(void)
     //	11      11      11      11      11      11      11      11
     rPDATG = 0xff;
     rPCONG = 0xffff;
-    rPUPG  = 0x0;		//pull-up portG enabled
+    rPUPG = 0x0;		//pull-up portG enabled
     rSPUCR = 0x7;  		//D15-D0 pull-up disable
 
-    /* Non Cache area */
-    rNCACHBE0 = ((Non_Cache_End>>12)<<16) | (Non_Cache_Start>>12);
+    /* Non Cache area */rNCACHBE0 = ((Non_Cache_End >> 12) << 16)
+            | (Non_Cache_Start >> 12);
 
     /* Low level default */
     rEXTINT = 0x0;
 }
-
 
 //--------------------------------HEAP---------------------------------//
 void *malloc(unsigned nbyte)
@@ -201,28 +192,25 @@ void *malloc(unsigned nbyte)
 {
     void *returnPt = mallocPt;
 
-    mallocPt = (int *) mallocPt +nbyte/4 + ((nbyte%4)>0); //to align 4byte
+    mallocPt = (int *) mallocPt + nbyte / 4 + ((nbyte % 4) > 0); //to align 4byte
 
-    if ((int)mallocPt > PILA_DEBUG_FIN)
-    {
+    if ((int) mallocPt > PILA_DEBUG_FIN) {
         mallocPt = returnPt;
-        return NULL;
+        return NULL ;
     }
     return returnPt;
 }
 
-void free(void *pt)
-{
+void free(void *pt) {
     mallocPt = pt;
 }
 
 /*
  * Inicializa la pila de depuracion con ceros
  */
-void pila_debug_init()
-{
+void pila_debug_init() {
     uint32_t* i = (uint32_t*) PILA_DEBUG_FIN;
-    for( ; i <= (uint32_t*) PILA_DEBUG_INI; i++){
+    for (; i <= (uint32_t*) PILA_DEBUG_INI; i++) {
         *i = 0;
     }
 
@@ -234,9 +222,8 @@ void pila_debug_init()
  * Se trata de una pila circular con capacidad para 255 elementos
  * (multiplo de 3, ya que se apilan en esa cantidad)
  */
-void push_debug(int ID_evento, int auxData)
-{
-    if(pila_debug_pointer <= (uint32_t*) PILA_DEBUG_FIN){
+void push_debug(int ID_evento, int auxData) {
+    if (pila_debug_pointer <= (uint32_t*) PILA_DEBUG_FIN) {
         pila_debug_pointer = (uint32_t*) PILA_DEBUG_INI;
     }
 
@@ -248,17 +235,15 @@ void push_debug(int ID_evento, int auxData)
 }
 
 //--------------------------------INIT---------------------------------//
-void sys_init()// Interrupt & Port
+void sys_init() // Interrupt & Port
 {
     /* enable interrupt */
     rINTMOD = 0x0;
     rINTCON = 0x1;
-    rI_ISPC = 0xffffffff;			/* clear all interrupt pend	*/
+    rI_ISPC = 0xffffffff; /* clear all interrupt pend	*/
     rEXTINTPND = 0xf;				// clear EXTINTPND reg
-    Port_Init();					/* Initial 44B0X's I/O port */
-    Delay(0);						/* delay time				*/
-
-
+    Port_Init(); /* Initial 44B0X's I/O port */
+    Delay(0); /* delay time				*/
 
     /* Config inicial para timers */
 
