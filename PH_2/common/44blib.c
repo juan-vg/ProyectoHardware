@@ -54,7 +54,7 @@ void Delay(int time)
         time = 200;
         adjust = 1;
         delayLoopCount = 400;
-        rWTCON = ((MCLK / 1000000 - 1) << 8) | (2 << 3);// 1M/64,Watch-dog,nRESET,interrupt disable//
+        rWTCON = ((MCLK / 1000000 - 1) << 8) | (2 << 3); // 1M/64,Watch-dog,nRESET,interrupt disable//
         rWTDAT = 0xffff;
         rWTCNT = 0xffff;
         rWTCON = ((MCLK / 1000000 - 1) << 8) | (2 << 3) | (1 << 5); // 1M/64,Watch-dog enable,nRESET,interrupt disable //
@@ -74,9 +74,9 @@ void mostrar_error_8led(uint8_t error) {
     uint8_t mostrar_error = 0;
     uint8_t codigo;
 
-    if(error == 0){
+    if (error == 0) {
         codigo = cero;
-    } else if (error == 1){
+    } else if (error == 1) {
         codigo = uno;
     } else {
         codigo = dos;
@@ -178,8 +178,8 @@ void Port_Init(void) {
     rPUPG = 0x0;		//pull-up portG enabled
     rSPUCR = 0x7;  		//D15-D0 pull-up disable
 
-    /* Non Cache area */rNCACHBE0 = ((Non_Cache_End >> 12) << 16)
-            | (Non_Cache_Start >> 12);
+    // Non Cache area
+    rNCACHBE0 = ((Non_Cache_End >> 12) << 16) | (Non_Cache_Start >> 12);
 
     /* Low level default */
     rEXTINT = 0x0;
