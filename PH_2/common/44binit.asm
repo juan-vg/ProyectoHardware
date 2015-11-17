@@ -368,8 +368,9 @@ F2:
 	MRS	r0, CPSR
 	BIC	r0, r0, #NOINT /* enable interrupt */
 	MSR	CPSR_cxsf, r0
-	/* jump to main() */
-	ldr r0, =cuadricula
+
+	/* salto a main() de C */
+	ldr r0, =cuadricula // puntero a cuadricula sudoku
    	BL	Main
    	B   .	    
 
