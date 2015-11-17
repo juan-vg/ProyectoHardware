@@ -211,8 +211,26 @@ l2:
 	add		sp,sp,#4
 	subs	pc,lr,#4
 
+
+#########################################################
+.global DoUndef
+.global DoDabort
+
+DoUndef:
+.word 0xE6000010
+mov pc,lr
+
+DoDabort:
+ldr r0,=0x0a333333
+str r0,[r0]
+mov pc,lr
+#########################################################
+
 .extern mostrar_error_8led
 ISR_Exception:
+
+	ldr r4, =mostrar_error_8led
+	bx r4
 
 	sub sp, sp, #4
 
@@ -223,7 +241,7 @@ ISR_Exception:
     bic	    r0,r0,#MODEMASK
 
 	# comparar con valor intermedio entre ABORT y UNDEF
-    cmp r0, 0x18
+    cmp r0, #0x18
 
 	#UNDEF
 	movgt r0, #0

@@ -14,16 +14,23 @@
 /*--- variables globales ---*/
 /* int_count la utilizamos para sacar un número por el 8led.
   Cuando se pulsa un botón sumamos y con el otro restamos. ¡A veces hay rebotes! */
-unsigned int int_count = 0;
-uint8_t sentido = 0;
+//unsigned int int_count = 0;
+int8_t sentido = 0;
 uint8_t estado_botones = 0;
 uint8_t pulsado = 0;
 
 /*--- declaracion de funciones ---*/
 void Eint4567_ISR(void) __attribute__((interrupt("IRQ")));
 void Eint4567_init(void);
-extern void D8Led_symbol(int value); // declaramos la función que escribe en el 8led
-extern void programar_alarma(int ms);
+
+// declaramos las funciones que escriben en el 8led
+//extern void D8Led_symbol(int);
+extern void D8Led_sequence(int8_t);
+extern void D8Led_sequence_1_9(int8_t);
+
+
+extern void programar_alarma(int);
+extern void push_debug(int, int);
 
 /*--- codigo de funciones ---*/
 void Eint4567_init(void)
@@ -55,18 +62,18 @@ void Eint4567_ISR(void)
     auxData |= estado_botones << 8;
     auxData |= pulsado;
 
-    push_debug(0, auxData);
+    push_debug(830624, auxData);
 
     /* Identificar la interrupcion (hay dos pulsadores)*/
     int which_int = rEXTINTPND;
     switch (which_int)
     {
     case 4:
-        int_count++; // incrementamos el contador
+        //int_count++; // incrementamos el contador
         sentido = 1;
         break;
     case 8:
-        int_count--; // decrementamos el contador
+        //int_count--; // decrementamos el contador
         sentido = -1;
         break;
     default:
@@ -85,7 +92,8 @@ void Eint4567_ISR(void)
         estado_botones = 1;
     }
 
-    D8Led_symbol(int_count&0x000f); // sacamos el valor por pantalla (módulo 16)
+    //D8Led_symbol(int_count&0x000f); // sacamos el valor por pantalla (módulo 16)
+    D8Led_sequence(sentido);
 
     /* Finalizar ISR */
     rEXTINTPND = 0xf;				// borra los bits en EXTINTPND
