@@ -114,6 +114,8 @@ int sudoku_candidatos_c(CELDA cuadricula[NUM_FILAS][NUM_COLUMNAS], uint8_t fila,
 
     }
 
+    //TODO: Optimizar la obtencion del punto inicial de la region (tabla)
+
     // recorrer region recalculando candidatos
     // obtener region
     uint8_t regionFila = fila / 3;

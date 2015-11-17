@@ -87,7 +87,6 @@ void Eint4567_ISR(void) {
 
         // trp = 100 ms
         programar_alarma(100);
-        estado_botones = 1;
     }
 
     //D8Led_symbol(int_count&0x000f); // sacamos el valor por pantalla (módulo 16)

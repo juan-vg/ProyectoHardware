@@ -61,14 +61,14 @@ void timer2_ISR(void) {
         // ID = DEB1
         push_debug(0xDEB1, auxData);
 
-        if (estado_botones == 1) {
+        if (estado_botones == 0) {
             programar_alarma(10);
             tiempo_botones++;
-            estado_botones = 2;
+            estado_botones = 1;
         }
 
         // despues de 300 ms (100 + 200) como maximo
-        else if (estado_botones == 2 && pulsado > 0 && tiempo_botones < 40) {
+        else if (estado_botones == 1 && pulsado > 0 && tiempo_botones < 40) {
 
             //leer bits 6 y 7 (pulsadores)
             //cuando NO estan pulsados hay un 1 en rPDATG[7:6]
@@ -81,7 +81,7 @@ void timer2_ISR(void) {
         }
 
         // despues de mas de 200 ms (mas los 100ms iniciales) -> siguiente
-        else if (estado_botones == 2 && pulsado > 0 && tiempo_botones >= 40) {
+        else if (estado_botones == 1 && pulsado > 0 && tiempo_botones >= 40) {
 
             // para comparar con 300ms solo cuando se mantenga pulsado
             tiempo_botones = 10;
@@ -93,13 +93,13 @@ void timer2_ISR(void) {
             //TODO: cambiar D8Led_sequence(sentido) por D8Led_siguiente()
         }
 
-        else if (estado_botones == 2 && pulsado == 0) {
+        else if (estado_botones == 1 && pulsado == 0) {
             // trd = 100ms
             programar_alarma(100);
-            estado_botones = 3;
+            estado_botones = 2;
         }
 
-        else if (estado_botones == 3) {
+        else if (estado_botones == 2) {
             // vuelve a activar las IRQs de botones
             rINTMSK &= ~(BIT_EINT4567);
             estado_botones = 0;

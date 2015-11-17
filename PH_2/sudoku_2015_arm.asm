@@ -163,6 +163,9 @@ sudoku_candidatos_arm:
         # se puede modificar r0, r1, r2 y r3 sin guardarlos previamente.
         STMFD   sp!, {r4-r11}
 
+        // TODO: Optimizar la obtencion de la @ de la celda (MLA) ??????
+        // -> contar ciclos y determinar si procede !!!!
+
         # obtener @ fila (de 32 en 32 bytes)
         # r3 (calc. fila) = r1 (param. fila) * 32
         mov r3, r1, lsl#5
@@ -261,6 +264,8 @@ candidatos_arm_recorre_columna_siguiente:
 # ############# recorrer REGION recalculando candidatos #######################
 
         # # # obtener region ########################################
+
+        // TODO: Optimizar la obtencion del punto inicial de la region (tabla)
 
         # obtener fila inicial de la region (fila / 3)*3
         mov r3, #0
