@@ -32,3 +32,8 @@
 *.dSYM/
 
 Debug/*
+
+*/Debug/*
+
+*.project
+*.cproject

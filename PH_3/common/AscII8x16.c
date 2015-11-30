@@ -332,3 +332,49 @@ const INT8U g_auc_Ascii8x16[]=
   0x00,0x00
 };
 
+/*
+
+    private static void escribirAscii(int valAscii, char[] representacion) {
+        int posAscii = valAscii * 16;
+        for (int i = 0; i < 16; i++) {
+            ascii[posAscii + i] = representacion[i];
+        }
+    }
+
+    private static void acentuarAscii(int refValAscii, int valAscii) {
+        char[] representacion = new char[16];
+
+        int posAscii = refValAscii * 16;
+
+        for (int i = 0; i < 16; i++) {
+            representacion[i] = ascii[posAscii + i];
+        }
+
+        if (refValAscii >= 'a' && refValAscii <= 'z') {
+            representacion[2] = 0x0c;
+            representacion[3] = 0x18;
+            representacion[4] = 0x30;
+        } else {
+            representacion[0] = 0x0c;
+            representacion[1] = 0x18;
+        }
+
+        escribirAscii(valAscii, representacion);
+    }
+
+    public static void acentuarVocales(){
+        acentuarAscii('a', 'á');
+        acentuarAscii('e', 'é');
+        acentuarAscii('i', 'í');
+        acentuarAscii('o', 'ó');
+        acentuarAscii('u', 'ú');
+
+        acentuarAscii('A', 'Á');
+        acentuarAscii('E', 'É');
+        acentuarAscii('I', 'Í');
+        acentuarAscii('O', 'Ó');
+        acentuarAscii('U', 'Ú');
+    }
+
+     */
+
