@@ -15,26 +15,22 @@
 
 /* PILA DEBUG */
 
-// multiplo de 3 (se apilan de 3 en 3 datos)
-// 255 es aprox 256 (como el resto de pilas)
+// tamaño identico al resto de pilas, en direccion alineada
 #define PILA_DEBUG_SIZE 256
 
-//Al final del bloque heap, sin interferir en las otras pilas
+// al final del bloque heap, sin interferir en las otras pilas
 #define PILA_DEBUG_INI (HEAPEND)
 #define PILA_DEBUG_FIN (PILA_DEBUG_INI - PILA_DEBUG_SIZE)
 
 // sp de la pila debug
 uint32_t* pila_debug_pointer = (uint32_t*) PILA_DEBUG_INI;
+void push_debug(unsigned int, unsigned int);
 
 /*************/
 
 extern uint8_t switch_timer;
 extern void D8Led_symbol(int);
 extern int Timer2_Leer(void);
-
-enum {
-	cero = ~0xED, uno = ~0x60, dos = ~0xCE, E = ~0x8F, blank = ~0x00
-};
 
 extern char Image_RW_Limit[];
 volatile unsigned char *downPt;
@@ -81,36 +77,51 @@ void DelayMs(int ms_time)
 		;
 }
 
-void mostrar_error_8led(uint8_t error) {
+/**
+ * Identifica el error que se ha producido y lo muestra en el 8Led
+ *
+ */
+void mostrar_error_8led(uint8_t error, uint32_t dir_causante) {
+
+	push_debug((unsigned int)0xDEB5 + error, (unsigned int)dir_causante);
 
 	uint8_t mostrar_error = 0;
 	uint32_t codigo;
 
+	// UNDEF
 	if (error == 0) {
-		codigo = cero;
-	} else if (error == 1) {
-		codigo = uno;
-	} else {
-		codigo = dos;
+		codigo = 0x1;
+	}
+	// DABORT
+	else if (error == 1) {
+		codigo = 0x2;
+	}
+	// PABORT
+	else {
+		codigo = 0x3;
 	}
 
+	// mostrar error indefinidamente
 	while (1) {
-
-
+		
+		// mostrar la 'E' (de error)
 		if (mostrar_error == 0) {
-			D8Led_symbol(E);
+			D8Led_symbol(0xE);
 			mostrar_error = 1;
-
-		} else if (mostrar_error == 1) {
+		}
+		
+		// mostrar el codigo del error
+		else if (mostrar_error == 1) {
 			D8Led_symbol(codigo);
 			mostrar_error = 2;
-
-		} else {
-			D8Led_symbol(blank);
+		} 
+		
+		// apagar 8Led con el simbolo 'blank' (efecto parpadeo)
+		else {
+			D8Led_symbol(0x10);
 			mostrar_error = 0;
 		}
-
-		DelayMs(1000);
+		Delay(10000);
 	}
 }
 
@@ -204,6 +215,7 @@ void *malloc(unsigned nbyte)
 
 	mallocPt = (int *) mallocPt + nbyte / 4 + ((nbyte % 4) > 0); //to align 4byte
 
+	// el fin del heap esta condicionado por el inicio de la pila de depuracion
 	if ((int) mallocPt > PILA_DEBUG_FIN) {
 		mallocPt = returnPt;
 		return NULL ;
@@ -233,13 +245,17 @@ void pila_debug_init() {
  * Se trata de una pila circular con capacidad para 255 elementos
  * (multiplo de 3, ya que se apilan en esa cantidad)
  */
-void push_debug(int ID_evento, int auxData) {
+void push_debug(unsigned int ID_evento, unsigned int auxData) {
+	
+	// comprobar limite de la pila (pila circular)
 	if (pila_debug_pointer <= (uint32_t*) PILA_DEBUG_FIN) {
 		pila_debug_pointer = (uint32_t*) PILA_DEBUG_INI;
 	}
 
+	// reservar espacio (Decrement Before)
 	pila_debug_pointer = pila_debug_pointer - 3;
 
+	// almacenar datos
 	pila_debug_pointer[2] = ID_evento;
 	pila_debug_pointer[1] = Timer2_Leer();
 	pila_debug_pointer[0] = auxData;
@@ -248,18 +264,18 @@ void push_debug(int ID_evento, int auxData) {
 //--------------------------------INIT---------------------------------//
 void sys_init() // Interrupt & Port
 {
-	/* enable interrupt */
+	/* Config inicial para interrupciones */
 	rINTMOD = 0x0;
 	rINTCON = 0x1;
 	rI_ISPC = 0xffffffff; /* clear all interrupt pend	*/
 	rEXTINTPND = 0xf;				// clear EXTINTPND reg
 	Port_Init(); /* Initial 44B0X's I/O port */
+	Delay(0); /* delay time	*/
+
+	// inicializar la pila de depuracion
 	pila_debug_init();
-	Delay(0); /* delay time				*/
-
-	/* Config inicial para timers */
-
-	// Enmascara todas las lineas excepto el bit global (bit 26, definido en 44b.h)
+	
+	// enmascarar todas las lineas excepto el bit global (bit 26, definido en 44b.h)
 	rINTMSK = ~BIT_GLOBAL;
 }
 

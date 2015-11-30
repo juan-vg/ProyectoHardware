@@ -227,40 +227,73 @@ mov pc,lr
 #########################################################
 
 .extern mostrar_error_8led
+
+ISR_Exception_DAbort:
+	# almacenar r0
+	stmfd   sp!,{r0}
+	mov r0, #0
+	b ISR_Exception
+
+ISR_Exception_PAbort:
+	# almacenar r0
+	stmfd   sp!,{r0}
+	mov r0, #1
+	b ISR_Exception
+
+
 ISR_Exception:
 
-	ldr r4, =mostrar_error_8led
-	bx r4
-
+	# reserva espacio para @ salto
 	sub sp, sp, #4
 
-	# almacenar r0 y r4
-	stmfd   sp!,{r0, r4}
+	# almacenar r2 y r4
+	stmfd   sp!,{r2, r4}
 
-	mrs	    r0,cpsr
-    bic	    r0,r0,#MODEMASK
+	mrs	    r2,cpsr
+    and	    r2,r2,#MODEMASK
 
 	# comparar con valor intermedio entre ABORT y UNDEF
-    cmp r0, #0x18
+    cmp r2, #0x18
 
-	#UNDEF
+	#UNDEF (PC - 4) #######################################
+
+	# opcion = 0
 	movgt r0, #0
 
-	#DATA ABORT
-	#mov r0, #1
-	#PREFETCH ABORT
-	movlt r0, #2
+	# r1 = @ instruccion causante
+	subgt r1, lr, #4
+	bgt ISR_Exception_fin
+
+
+
+	#ABORT ################################################
+	cmp r0, #0
+
+	#     DATA ABORT (PC - 8)
+
+	# opcion = 1
+	moveq r0, #1
+
+	# r1 = @ instruccion causante
+	subeq r1, lr, #8
+
+
+	#     PREFETCH ABORT (PC - 4)
+
+	# opcion = 2
+	movne r0, #2
+
+	# r1 = @ instruccion causante
+	subne r1, lr, #4
+
+ISR_Exception_fin:
 
 	# obtiene @ de funcion c que muestra la excepcion
 	ldr r4, =mostrar_error_8led
-	str r4,[sp,#4]
+	str r4, [sp,#8]
 
-	# saltar r0
-	add sp, sp, #4
-
-	# no se restaura r0 porque es un parametro ATPCS
-	# no se actualiza sp, r0 sigue estando una posicion por encima de la cima
-	ldmfd   sp,{r4, pc}
+	# no se restauran r0 ni r1 porque son parametros ATPCS
+	ldmfd   sp,{r2, r4, pc}
 
 #****************************************************
 #*	START											*
@@ -334,12 +367,12 @@ ResetHandler:
 
     // DATA ABORT
     ldr	    r0,=HandleDabort
-    ldr	    r1,=ISR_Exception
+    ldr	    r1,=ISR_Exception_DAbort
     str	    r1,[r0]
 
     // PREFETCH ABORT
     ldr	    r0,=HandlePabort
-    ldr	    r1,=ISR_Exception
+    ldr	    r1,=ISR_Exception_PAbort
     str	    r1,[r0]
 
     #********************************************************
@@ -370,7 +403,7 @@ F2:
 	MSR	CPSR_cxsf, r0
 
 	/* salto a main() de C */
-	ldr r0, =cuadricula // puntero a cuadricula sudoku
+	/*ldr r0, =cuadricula // puntero a cuadricula sudoku*/
    	BL	Main
    	B   .	    
 
@@ -536,23 +569,6 @@ SMRDATA:
 .equ	HandleEINT2,	_ISR_STARTADDRESS+4*31
 .equ	HandleEINT1,	_ISR_STARTADDRESS+4*32
 .equ	HandleEINT0,	_ISR_STARTADDRESS+4*33		/* 0xc1(c7)fff84 */
-
-.data
-.ltorg /*guarantees the alignment*/
-.align 5
-
-cuadricula:
-     /* 9 filas de 16 entradas para facilitar la visualizacion y 16 bits por celda */
-    .hword   0x9800,0x6800,0x0000,0x0000,0x0000,0x0000,0x7800,0x0000,0x8800,0,0,0,0,0,0,0
-    .hword   0x8800,0x0000,0x0000,0x0000,0x0000,0x4800,0x3800,0x0000,0x0000,0,0,0,0,0,0,0
-    .hword   0x1800,0x0000,0x0000,0x5800,0x0000,0x0000,0x0000,0x0000,0x0000,0,0,0,0,0,0,0
-    .hword   0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x1800,0x7800,0x6800,0,0,0,0,0,0,0
-    .hword   0x2800,0x0000,0x0000,0x0000,0x9800,0x3800,0x0000,0x0000,0x5800,0,0,0,0,0,0,0
-    .hword   0x7800,0x0000,0x8800,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0,0,0,0,0,0,0
-    .hword   0x0000,0x0000,0x7800,0x0000,0x3800,0x2800,0x0000,0x4800,0x0000,0,0,0,0,0,0,0
-    .hword   0x3800,0x8800,0x2800,0x1800,0x0000,0x5800,0x6800,0x0000,0x0000,0,0,0,0,0,0,0
-    .hword   0x0000,0x4800,0x1800,0x0000,0x0000,0x9800,0x5800,0x2800,0x0000,0,0,0,0,0,0,0
-
 
 
 .end

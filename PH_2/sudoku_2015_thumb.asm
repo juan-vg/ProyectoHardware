@@ -352,7 +352,8 @@ candidatos_thumb_return_llena:
 
 candidatos_thumb_return_llena_error:
 
-        mov r0, #-1
+        mov r0, #1
+        mvn r0, r0
         b candidatos_thumb_return_fin
 
 candidatos_thumb_return_vacia:

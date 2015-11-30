@@ -37,7 +37,7 @@ inline uint8_t hay_error(CELDA *celda, uint8_t val) {
     uint16_t mascara_valor = (0x1 << (val - 1));
     uint16_t candidatos = (*celda & 0x1FF);
 
-    return mascara_valor != mascara_valor & candidatos;
+    return mascara_valor != (mascara_valor & candidatos);
 }
 
 inline void celda_poner_error(CELDA *celdaptr) {
@@ -60,6 +60,8 @@ sudoku_candidatos_arm(CELDA*, uint8_t, uint8_t);
 extern int
 sudoku_candidatos_thumb(CELDA*, uint8_t, uint8_t);
 
+int sudoku9x9(CELDA cuadricula[NUM_FILAS][NUM_COLUMNAS], int, char*);
+
 ////////////////////////////////////////////////////////////////////////////////
 // Dada una determinada celda de la cuadricula encuentra los posibles valores
 // candidatos. Devuelve 0 si celda vacia, -1 si celda llena con error,
@@ -70,7 +72,7 @@ int sudoku_candidatos_c(CELDA cuadricula[NUM_FILAS][NUM_COLUMNAS], uint8_t fila,
     uint8_t i, j;
 
     // borrar bit de error
-    celda_quitar_error(cuadricula[fila][columna]);
+    celda_quitar_error(&cuadricula[fila][columna]);
 
     // iniciar candidatos
     cuadricula[fila][columna] |= 0x01FF;
@@ -150,8 +152,8 @@ int sudoku_candidatos_c(CELDA cuadricula[NUM_FILAS][NUM_COLUMNAS], uint8_t fila,
 
     if (valor_celda != 0) {
 
-        if (hay_error(cuadricula[fila][columna], valor_celda) == 1) {
-            celda_poner_error(cuadricula[fila][columna]);
+        if (hay_error(&cuadricula[fila][columna], valor_celda) == 1) {
+            celda_poner_error(&cuadricula[fila][columna]);
             return -1;
         } else {
             return 1;

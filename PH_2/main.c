@@ -1,6 +1,6 @@
 /*********************************************************************************************
  * Fichero:	main.c
- * Autor:
+ * Autor: Marta Frias y Juan Vela
  * Descrip:	punto de entrada de C
  * Version:  <P4-ARM.timer-leds>
  *********************************************************************************************/
@@ -20,9 +20,16 @@ typedef uint16_t CELDA;
 // 1 bit no usado
 // 9 LSB CANDIDATOS
 
+// Tamaños de la cuadricula
+// Se utilizan 16 columnas para facilitar la visualización
+enum {
+	NUM_FILAS = 9, NUM_COLUMNAS = 16, PADDING = 7
+};
+
 /*--- variables globales ---*/
 extern uint8_t switch_timer;
 extern int8_t valor_actual;
+extern uint8_t pulsado;
 
 /*--- funciones externas ---*/
 extern void leds_off();
@@ -31,12 +38,21 @@ extern void led2_on();
 extern void leds_switch();
 extern void timer_init();
 extern void Eint4567_init();
-extern void D8Led_init();
+
 extern void Timer2_Inicializar();
 extern void Timer2_Empezar();
 extern unsigned int Timer2_Leer();
 extern void DelayMs(int);
+extern void Delay(int);
+
+extern void D8Led_init();
+extern void D8Led_symbol();
 extern void D8Led_define_rango(uint8_t min, uint8_t max);
+extern void D8Led_activar_avance(void);
+extern void D8Led_desactivar_avance(void);
+
+extern void celda_poner_valor(CELDA*, uint8_t);
+extern int sudoku9x9(CELDA cuadricula[NUM_FILAS][NUM_COLUMNAS], int, char*);
 
 void DoUndef(void);
 void DoDabort(void);
@@ -44,132 +60,173 @@ void DoDabort(void);
 /*--- declaracion de funciones ---*/
 void Main(void);
 
+
+/* variables */
+	
+// cuadricula SUDOKU. Definida en espacio de memoria de la aplicacion. Alineada
+static CELDA cuadricula[NUM_FILAS][NUM_COLUMNAS] __attribute__((aligned(32))) = { {
+		0x9800, 0x6800, 0x0000, 0x0000, 0x0000, 0x0000, 0x7800, 0x0000,
+		0x8800, 0, 0, 0, 0, 0, 0, 0 }, { 0x8800, 0x0000, 0x0000, 0x0000,
+		0x0000, 0x4800, 0x3800, 0x0000, 0x0000, 0, 0, 0, 0, 0, 0, 0 }, {
+		0x1800, 0x0000, 0x0000, 0x5800, 0x0000, 0x0000, 0x0000, 0x0000,
+		0x0000, 0, 0, 0, 0, 0, 0, 0 }, { 0x0000, 0x0000, 0x0000, 0x0000,
+		0x0000, 0x0000, 0x1800, 0x7800, 0x6800, 0, 0, 0, 0, 0, 0, 0 }, {
+		0x2800, 0x0000, 0x0000, 0x0000, 0x9800, 0x3800, 0x0000, 0x0000,
+		0x5800, 0, 0, 0, 0, 0, 0, 0 }, { 0x7800, 0x0000, 0x8800, 0x0000,
+		0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0, 0, 0, 0, 0, 0, 0 }, {
+		0x0000, 0x0000, 0x7800, 0x0000, 0x3800, 0x2800, 0x0000, 0x4800,
+		0x0000, 0, 0, 0, 0, 0, 0, 0 }, { 0x3800, 0x8800, 0x2800, 0x1800,
+		0x0000, 0x5800, 0x6800, 0x0000, 0x0000, 0, 0, 0, 0, 0, 0, 0 }, {
+		0x0000, 0x4800, 0x1800, 0x0000, 0x0000, 0x9800, 0x5800, 0x2800,
+		0x0000, 0, 0, 0, 0, 0, 0, 0 } };
+
+
 /*--- codigo de funciones ---*/
 
-inline void celda_poner_valor(CELDA *celdaptr, uint8_t val) {
-    *celdaptr = (*celdaptr & 0x0FFF) | ((val & 0x000F) << 12);
-}
-
+/**
+ * Devuelve el valor del bit 11 de la celda (inidica si es pista). Si el valor
+ * es igual a 1 la celda tiene un valor fijado inicialmente
+ */
 inline uint8_t celda_comprueba_pista(CELDA *celdaptr) {
-    return ((*celdaptr & 0x800) >> 11);
+	return ((*celdaptr & 0x800) >> 11);
 }
 
 /**
+ * Realiza una espera activa hasta que se pulsa y se suelta el boton [boton]
+ *
  * boton = 0 -> cualquier boton
  * boton = 1 -> boton izquierdo
  * boton = 2 -> boton derecho
  */
 void esperarPulsacion(uint8_t boton) {
 
-    uint8_t valor;
+	// espera mientras :
+	// - no se pulsa nada
+	// - no se pulsa el boton esperado
+	while (pulsado == 0 || (boton > 0 && pulsado != boton))
+		;
 
-    // espera mientras :
-    // - no se pulsa nada
-    // - no se pulsa el boton esperado
-    while (pulsado == 0 || (boton > 0 && pulsado == (3 ^ boton)))
-        ;
-
-    // espera mientras no se suelta el boton esperado
-    while (pulsado != 0)
-        ;
+	// espera mientras no se suelta el boton esperado
+	while (pulsado != 0)
+		;
 }
 
-void Main(CELDA cuadricula[NUM_FILAS][NUM_COLUMNAS]) {
+void Main() {
 
-    /* Inicializa controladores */
-    sys_init();         // Inicializacion de la placa, interrupciones y puertos
-    timer_init();	    // Inicializacion del temporizador
-    Eint4567_init(); // inicializamos los pulsadores. Cada vez que se pulse se verá reflejado en el 8led
-    D8Led_init();       // inicializamos el 8led
+	/* Inicializa controladores */
+	sys_init();         // inicializar la placa, interrupciones y puertos
+	timer_init();	    // inicializar el temporizador
+	Eint4567_init(); 	// inicializar los pulsadores
+	D8Led_init();       // inicializar el 8led
 
-    int t1, t2, t3;
+	// configurar e iniciar el Timer2 
+	Timer2_Inicializar();
+	Timer2_Empezar();
 
-    t1 = t2 = t3 = 1;
+	// provocar excepciones
+	//DoUndef();
 
-    Timer2_Inicializar();
+	/* variables para medicion de tiempos */
+	int t1, t2;
+	t1 = t2 = 0;
 
-    // mide 1 ms
-    Timer2_Empezar();
-    DelayMs(1);
-    t1 = Timer2_Leer();
+	// desactivar avance de 8Led (para boton izquierdo)
+	D8Led_desactivar_avance();
 
-    // mide 10 ms
-    //Timer2_Empezar();
-    DelayMs(10);
-    t2 = Timer2_Leer();
+	// esperar pulsacion de un boton para empezar
+	esperarPulsacion(0);
 
-    // mide 1 s
-    //Timer2_Empezar();
-    DelayMs(1000);
-    t3 = Timer2_Leer();
+	/*********************  SUDOKU  *********************/
 
-    //while(1);
+	uint8_t fila, columna;
+	uint8_t fin = 0;
 
-    /* Valor inicial de los leds */
-    leds_off();
-    led1_on();
-    led2_on();
-    leds_off();
+	while (fin != 1) {
 
-    //DoDabort();
+		// calcular candidatos del tablero
+		// (opcion 1 -> C + C)
+		t1 = Timer2_Leer();
+		sudoku9x9(cuadricula, 5, 0);
+		//Delay(100);
+		t2 = Timer2_Leer() - t1;
 
-    // Esperar pulsacion de boton para empezar
-    esperarPulsacion(0);
+		// para filas el rango de valores posibles es [1,9]
+		// pero se permite el 0 para finalizar la partida
+		D8Led_define_rango(0, 9);
 
-    // TODO : calcular candidatos de todo el tablero
+		// mostrar la letra F (de FILA) en el 8led
+		D8Led_symbol(0xF);
 
-    // SUDOKU
+		// esperar boton izquierdo
+		esperarPulsacion(1);
 
-    int8_t fila, columna;
+		// mostrar posicion inicial (un uno)
+		D8Led_symbol(0x1);
 
-    // para filas y columnas el rango de valores posibles es [1,9]
-    D8Led_define_rango(1, 9);
+		// Activar avance de 8Led (para boton izquierdo)
+		D8Led_activar_avance();
 
-    // mostrar la letra F (de FILA) en el 8led
-    D8Led_symbol(0xF);
+		// esperar boton derecho (confirma)
+		esperarPulsacion(2);
 
-    // esperar boton izquierdo
-    esperarPulsacion(1);
+		// Desactivar avance de 8Led (para boton izquierdo)
+		D8Led_desactivar_avance();
 
-    // mostrar posicion inicial (un uno)
-    D8Led_symbol(0x1);
+		// obtener numero de fila a partir del valor del 8led
+		fila = valor_actual;
 
-    // esperar boton derecho (confirma)
-    esperarPulsacion(2);
+		// si se introduce un 0 -> terminar
+		if (fila == 0) {
+			fin = 1;
+		}
 
-    // obtener numero de fila a partir del valor del 8led
-    fila = valor_actual;
+		// si no -> continuar
+		else {
+			// para columnas el rango de valores posibles es [1,9]
+			D8Led_define_rango(1, 9);
 
-    // mostrar la letra C (de COLUMNA) en el 8led
-    D8Led_symbol(0xC);
+			// mostrar la letra C (de COLUMNA) en el 8led
+			D8Led_symbol(0xC);
 
-    // esperar boton izquierdo
-    esperarPulsacion(1);
+			// esperar boton izquierdo
+			esperarPulsacion(1);
 
-    // mostrar posicion inicial (un uno)
-    D8Led_symbol(0x1);
+			// mostrar posicion inicial (un uno)
+			D8Led_symbol(0x1);
 
-    // esperar boton derecho (confirma)
-    esperarPulsacion(2);
+			// activar avance de 8Led (para boton izquierdo)
+			D8Led_activar_avance();
 
-    // obtener numero de columna
-    columna = valor_actual;
+			// esperar boton derecho (confirma)
+			esperarPulsacion(2);
 
-    // para contenido de celdas el rango de valores posibles es [0,9]
-    D8Led_define_rango(0, 9);
+			// desactivar avance de 8Led (para boton izquierdo)
+			D8Led_desactivar_avance();
 
-    // mostrar valor inicial (un uno)
-    D8Led_symbol(0x1);
+			// obtener numero de columna
+			columna = valor_actual;
 
-    // esperar boton derecho (confirma)
-    esperarPulsacion(2);
+			// para contenido de celdas el rango de valores posibles es [0,9]
+			D8Led_define_rango(0, 9);
 
-    // almacena el valor introducido para la celda (a partir del 8led)
-    // si y solo si NO es una pista inicial
-    if (celda_comprueba_pista(cuadricula[fila - 1][columna - 1]) == 0) {
-        celda_poner_valor(cuadricula[fila - 1][columna - 1], valor_actual);
-    }
+			// mostrar valor inicial (un uno)
+			D8Led_symbol(0x1);
 
-    // sudoku (opcion 1 -> C + C)
-    sudoku9x9(cuadricula, 1, 0);
+			// activar avance de 8Led (para boton izquierdo)
+			D8Led_activar_avance();
+
+			// esperar boton derecho (confirma)
+			esperarPulsacion(2);
+
+			// desactivar avance de 8Led (para boton izquierdo)
+			D8Led_desactivar_avance();
+
+			// almacenar el valor introducido para la celda (a partir del 8led)
+			// si y solo si NO es una pista inicial
+			if (celda_comprueba_pista(&cuadricula[fila - 1][columna - 1]) == 0) {
+				celda_poner_valor(&cuadricula[fila - 1][columna - 1],
+						valor_actual);
+			}
+		}
+	}
 }

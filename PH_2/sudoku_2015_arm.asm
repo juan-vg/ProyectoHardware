@@ -179,7 +179,8 @@ sudoku_candidatos_arm:
         ldrh r5, [r4]
 
         # borrar bit de error
-        mov r6, #1, lsl#10
+        mov r6, #1
+        lsl r6, #10
         bic r5, r5, r6
 
         # iniciar candidatos

@@ -1,7 +1,7 @@
 /*********************************************************************************************
- * Fichero:		timer.c
- * Autor:
- * Descrip:		funciones de control del timer0 del s3c44b0x
+ * Fichero:	timer.c
+ * Autor: Marta Frias y Juan Vela
+ * Descrip:	funciones de control del timer0 y el timer2 del s3c44b0x
  * Version:
  *********************************************************************************************/
 
@@ -21,8 +21,10 @@ extern uint8_t estado_botones;
 extern unsigned int int_count;
 extern uint8_t sentido;
 extern uint8_t pulsado;
+extern uint8_t trd_esperado;
 
 extern void D8Led_symbol(int);
+extern void D8Led_siguiente();
 extern void push_debug(int, int);
 
 /*--- declaracion de funciones ---*/
@@ -34,7 +36,7 @@ void Timer2_Empezar(void);
 unsigned int Timer2_Leer(void);
 void programar_alarma(unsigned int);
 
-uint16_t tiempo_interr;
+uint16_t num_ticks_interr;
 unsigned int alarma = 0;
 
 /*--- codigo de las funciones ---*/
@@ -50,25 +52,18 @@ void timer2_ISR(void) {
     timer2_num_int++;
 
     // momento actual = momento alarma
-    if (alarma == timer2_num_int) {
+    if (alarma > 0 && alarma <= timer2_num_int) {
 
+		// almacenar interrupcion en pila debug
         uint32_t auxData = 0;
-
         auxData |= estado_botones << 16;
         auxData |= pulsado << 8;
         auxData |= tiempo_botones;
+        push_debug(0xDEB1, auxData); // ID = DEB1
 
-        // ID = DEB1
-        push_debug(0xDEB1, auxData);
-
-        if (estado_botones == 0) {
-            programar_alarma(10);
-            tiempo_botones++;
-            estado_botones = 1;
-        }
-
-        // despues de 300 ms (100 + 200) como maximo
-        else if (estado_botones == 1 && pulsado > 0 && tiempo_botones < 40) {
+        // comprobar estado del boton hasta 500 ms como maximo
+		// (500 = 100 (trp) + 400 (= 40 * 10))
+        if (estado_botones == 1 && pulsado > 0 && tiempo_botones <= 40) {
 
             //leer bits 6 y 7 (pulsadores)
             //cuando NO estan pulsados hay un 1 en rPDATG[7:6]
@@ -76,42 +71,58 @@ void timer2_ISR(void) {
                 pulsado = 0;
             }
 
+			// comprobar cada 10 ms
             programar_alarma(10);
             tiempo_botones++;
         }
 
-        // despues de mas de 200 ms (mas los 100ms iniciales) -> siguiente
-        else if (estado_botones == 1 && pulsado > 0 && tiempo_botones >= 40) {
+        // despues de mas de 400 ms (mas los 100ms iniciales) -> avanzar 8Led
+        else if (estado_botones == 1 && pulsado > 0 && tiempo_botones > 40) {
 
-            // para comparar con 300ms solo cuando se mantenga pulsado
+            // comparar con 300ms ((40-10) * 10) solo cuando se mantenga pulsado
             tiempo_botones = 10;
+			
+			// comprobar cada 10 ms
+            programar_alarma(10);
 
-            // avanza o retrocede una posicion
-            //int_count = int_count + sentido;
-            //D8Led_symbol(int_count&0x000f);
-            D8Led_sequence(sentido);
-            //TODO: cambiar D8Led_sequence(sentido) por D8Led_siguiente()
+            // avanza el 8Led una posicion
+            D8Led_siguiente();
         }
 
-        else if (estado_botones == 1 && pulsado == 0) {
+		// cuando se detecta que se ha soltado el boton
+        else if (estado_botones == 1 && pulsado == 0 && trd_esperado == 0) {
+			
             // trd = 100ms
             programar_alarma(100);
-            estado_botones = 2;
+            trd_esperado = 1;
         }
 
-        else if (estado_botones == 2) {
-            // vuelve a activar las IRQs de botones
+		// 
+        else if (estado_botones == 1 && trd_esperado == 1) {
+
+        	// Por precaucion, volver a borrar los bits de INTPND y EXTINTPND
+        	rEXTINTPND = 0xf;
+        	rI_ISPC |= (BIT_EINT4567);
+
+            // volver a activar las IRQs de botones
             rINTMSK &= ~(BIT_EINT4567);
+			
+			// reinicializar estado
             estado_botones = 0;
             tiempo_botones = 0;
+			trd_esperado = 0;
+
+            // desactivar alarma
+            alarma = 0;
         }
     }
 
     /* borrar bit en I_ISPC para desactivar la solicitud de interrupción*/
-    rI_ISPC |= BIT_TIMER2; // BIT_TIMER2 está definido en 44b.h y pone un uno en el bit 11 que correponde al Timer2
+    rI_ISPC |= BIT_TIMER2; // pone un uno en el bit 11 que correponde al Timer2
 }
 
 void timer_init(void) {
+	
     /* Configuraion controlador de interrupciones */
     rINTMOD = 0x0; // Configura las linas como de tipo IRQ
     rINTCON = 0x1; // Habilita int. vectorizadas y la linea IRQ (FIQ no)
@@ -122,11 +133,11 @@ void timer_init(void) {
 
     // Configura el Timer0
     rTCFG0 = 255; // ajusta el preescalado
-    rTCFG1 = 0x0; // selecciona la entrada del mux que proporciona el reloj. La 00 corresponde a un divisor de 1/2.
+    rTCFG1 = 0x0; // entrada del mux correspondiente a un divisor de 1/2.
     rTCNTB0 = 65535; // valor inicial de cuenta (la cuenta es descendente)
     rTCMPB0 = 12800; // valor de comparación
 
-    // establecer update=manual (bit 1) + inverter=on (¿? será inverter off un cero en el bit 2 pone el inverter en off)
+    // establecer update=manual (bit 1) + inverter=off
     rTCON = 0x2;
 
     /* iniciar timer (bit 0) con auto-reload (bit 3)*/
@@ -138,25 +149,25 @@ void timer_init(void) {
  * máxima precisión posible.
  */
 void Timer2_Inicializar(void) {
+	
     /* Configuraion controlador de interrupciones */
     rINTMOD = 0x0; // Configura las linas como de tipo IRQ
     rINTCON = 0x1; // Habilita int. vectorizadas y la linea IRQ (FIQ no)
-    rINTMSK &= ~(BIT_TIMER2); // Desenmascara Timer2 (BIT_TIMER2 están definido en 44b.h)
+    rINTMSK &= ~(BIT_TIMER2); // Desenmascara Timer2
 
     // Establece la rutina de servicio para TIMER2
     pISR_TIMER2 = (unsigned) timer2_ISR;
 
     // Configura el Timer2
     rTCFG0 &= ~0xFF00; // ajusta el preescalado
-    rTCFG1 &= ~0x0F00; // selecciona la entrada del mux que proporciona el reloj. La 00 corresponde a un divisor de 1/2.
+    rTCFG1 &= ~0x0F00; // entrada del mux correspondiente a un divisor de 1/2.
 
     // CNT = 32000 -> provoca interrupciones cada 1ms
-    rTCNTB2 = 32000; // valor inicial de cuenta (la cuenta es descendente)
+    rTCNTB2 = 33000; // valor inicial de cuenta (la cuenta es descendente)
     rTCMPB2 = 0; // valor de comparación
 
     /* precalcula el tiempo por cada ciclo */
-    tiempo_interr = (rTCNTB2 / 32);
-
+    num_ticks_interr = rTCNTB2;
 }
 
 /**
@@ -164,6 +175,7 @@ void Timer2_Inicializar(void) {
  * y comienza a medir.
  */
 void Timer2_Empezar(void) {
+	
     /* desactivar timer2, limpiando bits 12..15)*/
     rTCON &= ~0xF000;
 
@@ -185,16 +197,16 @@ void Timer2_Empezar(void) {
  * Cada interrupcion = (32000 * 0.03125) us = (32000 / 32) us
  *
  */
-unsigned int Timer2_Leer(void) {
-    int tiempo_ticks = ((rTCNTB2 - rTCNTO2 )/ 32);
-    return timer2_num_int * tiempo_interr + tiempo_ticks;
+ unsigned int Timer2_Leer(void) {
+    uint16_t num_ticks_actuales = (rTCNTB2 - rTCNTO2);
+    unsigned int result = (timer2_num_int * num_ticks_interr + num_ticks_actuales) / 33;
+    return result;
 }
 
 /**
  * Establece una alarma asincrona con precision de 1ms
  */
 void programar_alarma(unsigned int ms) {
-    //alarma = timer2_num_int + ms;
-    alarma = timer2_num_int + ms * 3;
+    alarma = timer2_num_int + ms;
 }
 
