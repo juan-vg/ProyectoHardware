@@ -54,7 +54,7 @@ void timer2_ISR(void) {
 
     timer2_num_int++;
 
-    if(timer2_num_int > 0 && timer2_num_int % 1000 == 0){
+    if(timer2_num_int % 1000 == 0){
         alarma_1s = 1;
     }
 
