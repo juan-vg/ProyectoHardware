@@ -255,6 +255,8 @@ void push_debug(unsigned int ID_evento, unsigned int auxData) {
 	// reservar espacio (Decrement Before)
 	pila_debug_pointer = pila_debug_pointer - 3;
 
+	// TODO: struct
+
 	// almacenar datos
 	pila_debug_pointer[2] = ID_evento;
 	pila_debug_pointer[1] = Timer2_Leer();

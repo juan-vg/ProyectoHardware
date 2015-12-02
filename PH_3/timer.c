@@ -40,6 +40,7 @@ void programar_alarma(unsigned int);
 
 uint16_t num_ticks_interr;
 unsigned int alarma = 0;
+uint8_t alarma_1s = 0;
 
 /*--- codigo de las funciones ---*/
 void timer_ISR(void) {
@@ -52,6 +53,10 @@ void timer_ISR(void) {
 void timer2_ISR(void) {
 
     timer2_num_int++;
+
+    if(timer2_num_int > 0 && timer2_num_int % 1000 == 0){
+        alarma_1s = 1;
+    }
 
     // momento actual = momento alarma
     if (alarma > 0 && alarma <= timer2_num_int) {

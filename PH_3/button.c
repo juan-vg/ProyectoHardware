@@ -12,10 +12,12 @@
 #include "inttypes.h"
 
 /*--- variables globales ---*/
-int8_t sentido = 0;
 uint8_t estado_botones = 0;
 uint8_t pulsado = 0;
 uint8_t trd_esperado = 0;
+
+uint8_t btn_izq_pnd = 0;
+uint8_t btn_dch_pnd = 0;
 
 /*--- declaracion de funciones ---*/
 void Eint4567_ISR(void) __attribute__((interrupt("IRQ")));
@@ -63,15 +65,14 @@ void Eint4567_ISR(void) {
     int which_int = rEXTINTPND;
     switch (which_int) {
     case 4:
-        sentido = -1;
         pulsado = 1;    // boton izquierdo (1) pulsado
-			
+        btn_izq_pnd = btn_izq_pnd + 1;
 		// avanzar el 8Led una posicion
 		D8Led_siguiente();
         break;
     case 8:
-        sentido = 1;
         pulsado = 2;    // boton derecho (2) pulsado
+        btn_dch_pnd = btn_dch_pnd + 1;
         break;
     default:
         break;

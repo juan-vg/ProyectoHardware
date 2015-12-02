@@ -91,13 +91,13 @@ void D8Led_sequence(int8_t sentido) {
 }
 
 /**
- * Define el rango de valores numericos que puede utilizar el 8led
+ * Define el rango de valores que puede utilizar el 8led
  */
 void D8Led_define_rango(uint8_t min, uint8_t max) {
 	if (min >= 0) {
 		minimo = min;
 	}
-	if (max <= 9) {
+	if (max <= 0xF) {
 		maximo = max;
 	}
 }
