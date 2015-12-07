@@ -35,5 +35,5 @@ Debug/*
 
 */Debug/*
 
-*.project
-*.cproject
+**/.project
+**/.cproject

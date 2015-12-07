@@ -49,9 +49,14 @@ extern void D8Led_desactivar_avance(void);
 // LCD
 extern void Lcd_Init(void);
 extern void Lcd_pantalla_inicial(void);
+extern void Lcd_pantalla_final(void);
 extern void Lcd_cuadricula_sudoku(void);
 extern void Lcd_rellenar_celda(INT8U, INT8U, CELDA);
-extern void Lcd_actualizar_tiempo(int);
+extern void Lcd_actualizar_tiempo_calculo(int);
+extern void Lcd_actualizar_tiempo_total(int);
+extern void Lcd_limpiar_celda(INT8U, INT8U);
+extern void Lcd_marcar_celda(INT8U, INT8U);
+extern void Lcd_desmarcar_celda(INT8U, INT8U);
 
 extern void celda_poner_valor(CELDA*, uint8_t);
 extern int sudoku9x9(CELDA cuadricula[NUM_FILAS][NUM_COLUMNAS], int, char*);
@@ -65,6 +70,21 @@ void Main(void);
 /* variables */
 
 uint8_t estado_juego = 0;
+
+// cuadricula SUDOKU. Definida en espacio de memoria de la aplicacion. Alineada
+static CELDA cuadricula_ini[NUM_FILAS][NUM_COLUMNAS] __attribute__((aligned(32)))
+= { { 0x9800, 0x6800, 0x0000, 0x0000, 0x0000, 0x0000, 0x7800, 0x0000, 0x8800, 0,
+        0, 0, 0, 0, 0, 0 }, { 0x8800, 0x0000, 0x0000, 0x0000, 0x0000, 0x4800,
+        0x3800, 0x0000, 0x0000, 0, 0, 0, 0, 0, 0, 0 }, { 0x1800, 0x0000, 0x0000,
+        0x5800, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0, 0, 0, 0, 0, 0, 0 }, {
+        0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x1800, 0x7800, 0x6800,
+        0, 0, 0, 0, 0, 0, 0 }, { 0x2800, 0x0000, 0x0000, 0x0000, 0x9800, 0x3800,
+        0x0000, 0x0000, 0x5800, 0, 0, 0, 0, 0, 0, 0 }, { 0x7800, 0x0000, 0x8800,
+        0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0, 0, 0, 0, 0, 0, 0 }, {
+        0x0000, 0x0000, 0x7800, 0x0000, 0x3800, 0x2800, 0x0000, 0x4800, 0x0000,
+        0, 0, 0, 0, 0, 0, 0 }, { 0x3800, 0x8800, 0x2800, 0x1800, 0x0000, 0x5800,
+        0x6800, 0x0000, 0x0000, 0, 0, 0, 0, 0, 0, 0 }, { 0x0000, 0x4800, 0x1800,
+        0x0000, 0x0000, 0x9800, 0x5800, 0x2800, 0x0000, 0, 0, 0, 0, 0, 0, 0 } };
 
 // cuadricula SUDOKU. Definida en espacio de memoria de la aplicacion. Alineada
 static CELDA cuadricula[NUM_FILAS][NUM_COLUMNAS] __attribute__((aligned(32)))
@@ -112,7 +132,7 @@ void esperarPulsacion(uint8_t boton) {
 }
 
 /**
- * Comprueba si se ha pulsado el boton [boton]
+ * Devuelve 1 si se ha pulsado el boton [boton]
  *
  * boton = 0 -> cualquier boton
  * boton = 1 -> boton izquierdo
@@ -120,75 +140,32 @@ void esperarPulsacion(uint8_t boton) {
  */
 uint8_t comprobarPulsacion(uint8_t boton) {
 
+    uint8_t resp = 0;
+
     if (boton == 0) {
 
-        if (btn_izq_pnd > 0 || btn_dch_pnd > 0) {
-            btn_izq_pnd = 0;
-            btn_dch_pnd = 0;
-            return 1;
+        if (btn_izq_pnd == 1 || btn_dch_pnd == 1) {
+            resp = 1;
         }
     } else if (boton == 1) {
 
-        if (btn_izq_pnd > 0) {
-            btn_izq_pnd = 0;
-            return 1;
+        if (btn_izq_pnd == 1) {
+            resp = 1;
         }
     } else if (boton == 2) {
 
-        if (btn_dch_pnd > 0) {
-            btn_dch_pnd = 0;
-            return 1;
+        if (btn_dch_pnd == 1) {
+            resp = 1;
         }
     }
 
-    return 0;
+    btn_izq_pnd = 0;
+    btn_dch_pnd = 0;
+
+    return resp;
 }
 
-/*void Main() {
-
- // Inicializa controladores
- sys_init();
- Lcd_Init();
- Timer2_Inicializar();
- Timer2_Empezar();
-
- //Lcd_pantalla_inicial();
- Lcd_cuadricula_sudoku();
-
-
- int tiempo = 0;
-
- INT8U i = 0, j = 0;
- CELDA celda = 0x5FFF;
-
- while(1){
-
- if (j < 9 && i < 9){
-
- if (j % 4 == 0 && i % 3 == 0){
- celda = 0x5400;
- } else {
- celda = 0x5000;
- }
-
- Lcd_rellenar_celda(i, j, celda);
- }
-
- Lcd_actualizar_tiempo(tiempo++);
-
-
- Delay(10000);
-
- j++;
-
- if(j == 9 && i < 9){
- i++;
- j = 0;
- }
- }
- }*/
-
-unsigned int iniciar_juego() {
+int preparar_movimiento() {
 
     unsigned int t1, t2;
     t1 = t2 = 0;
@@ -196,9 +173,14 @@ unsigned int iniciar_juego() {
     // calcular candidatos del tablero
     // (opcion 1 -> C + C)
     t1 = Timer2_Leer();
-    sudoku9x9(cuadricula, 5, 0);
-    //Delay(100);
+
+    // TODO : investigar opcion 5 (no pone error)
+
+    int result = sudoku9x9(cuadricula, 5, 0);
+
     t2 = Timer2_Leer() - t1;
+
+    rellenar_cuadricula();
 
     // para filas el rango de valores posibles es [1,9]
     // pero se permite el 0 para finalizar la partida
@@ -207,12 +189,47 @@ unsigned int iniciar_juego() {
     // mostrar la letra F (de FILA) en el 8led
     D8Led_symbol(0xF);
 
-    return t2;
+    // si tablero NO terminado
+    if (result != 0) {
+        return t2;
+    }
+    // si tablero terminado
+    else {
+        return -t2;
+    }
+
+}
+
+void reiniciar_cuadricula(void) {
+    uint8_t i, j;
+
+    for (i = 0; i < NUM_FILAS; i++) {
+        for (j = 0; j < NUM_COLUMNAS - PADDING; j++) {
+            cuadricula[i][j] = cuadricula_ini[i][j];
+        }
+    }
+}
+
+void rellenar_cuadricula(void) {
+
+    uint8_t i, j;
+    i = j = 0;
+
+    for (i = 0; i < NUM_FILAS; i++) {
+        for (j = 0; j < NUM_COLUMNAS - PADDING; j++) {
+
+            CELDA celda = cuadricula[i][j];
+            Lcd_limpiar_celda(i, j);
+            Lcd_rellenar_celda(i, j, celda);
+        }
+    }
+
 }
 
 void Main() {
     // Inicializa controladores
     sys_init();         // inicializar la placa, interrupciones y puertos
+    Lcd_Init();
     timer_init();       // inicializar el temporizador
     Eint4567_init();    // inicializar los pulsadores
     D8Led_init();       // inicializar el 8led
@@ -226,16 +243,20 @@ void Main() {
 
     uint8_t fila, columna;
     uint8_t fin = 0;
+    uint8_t ultima_modificada;
 
     unsigned int tiempo_total = 0;
     unsigned int tiempo_calculo = 0;
+    unsigned int alarma_5s = 0;
+    unsigned int ultimo_segundo = 0;
+    uint8_t parpadeo = 1;
 
     Lcd_pantalla_inicial();
 
-    while (fin != 1) {
+    while (1) {
 
-        if(alarma_1s == 1){
-            Lcd_actualizar_tiempo(tiempo_total++);
+        if (estado_juego > 0 && fin == 0 && alarma_1s == 1) {
+            Lcd_actualizar_tiempo_total(tiempo_total++);
             alarma_1s = 0;
         }
 
@@ -243,11 +264,14 @@ void Main() {
 
             if (comprobarPulsacion(0) == 1) {
 
-                tiempo_calculo += iniciar_juego();
+                tiempo_calculo = 0;
+                tiempo_total = 0;
 
                 Lcd_cuadricula_sudoku();
-
+                tiempo_calculo += preparar_movimiento();
                 estado_juego++;
+
+                Lcd_actualizar_tiempo_calculo(tiempo_calculo);
             }
 
         } else if (estado_juego == 1) {
@@ -259,11 +283,35 @@ void Main() {
 
                 // Activar avance de 8Led (para boton izquierdo)
                 D8Led_activar_avance();
+
+                estado_juego++;
             }
 
         } else if (estado_juego == 2) {
 
-            if (comprobarPulsacion(2) == 1) {
+            if (fin == 1 && comprobarPulsacion(2) == 1) {
+                Lcd_pantalla_final();
+                reiniciar_cuadricula();
+                estado_juego = 0;
+                fin = 0;
+
+            } else if (fin == 1 && comprobarPulsacion(1) == 1) {
+
+                Lcd_cuadricula_sudoku();
+                rellenar_cuadricula();
+                Lcd_actualizar_tiempo_calculo(tiempo_calculo);
+
+                // para filas el rango de valores posibles es [1,9]
+                // pero se permite el 0 para finalizar la partida
+                D8Led_define_rango(1, 0xA);
+
+                // mostrar la letra F (de FILA) en el 8led
+                D8Led_symbol(0xF);
+
+                estado_juego = 1;
+                fin = 0;
+
+            } else if (comprobarPulsacion(2) == 1) {
 
                 // Desactivar avance de 8Led (para boton izquierdo)
                 D8Led_desactivar_avance();
@@ -273,6 +321,7 @@ void Main() {
 
                 // si se introduce una A -> terminar (Abortar)
                 if (fila == 0xA) {
+                    Lcd_pantalla_confirmar();
                     fin = 1;
                 } else {
 
@@ -326,17 +375,99 @@ void Main() {
                 // desactivar avance de 8Led (para boton izquierdo)
                 D8Led_desactivar_avance();
 
+                uint8_t modificado = 0;
+
                 // almacenar el valor introducido para la celda (a partir del 8led)
                 // si y solo si NO es una pista inicial
                 if (celda_comprueba_pista(&cuadricula[fila - 1][columna - 1])
                         == 0) {
+
+                    ultima_modificada = celda_leer_valor(
+                            cuadricula[fila - 1][columna - 1]);
                     celda_poner_valor(&cuadricula[fila - 1][columna - 1],
                             valor_actual);
+
+                    modificado = 1;
                 }
 
-                iniciar_juego();
+                int t = preparar_movimiento();
 
-                estado_juego = 1;
+                if (t > 0) {
+                    tiempo_calculo += t;
+
+                    if (modificado == 1) {
+                        alarma_5s = tiempo_total + 5;
+                        ultimo_segundo = tiempo_total;
+                        Lcd_marcar_celda(fila - 1, columna - 1);
+                        parpadeo = 1;
+                        estado_juego = 6;
+                    } else {
+                        estado_juego = 1;
+                    }
+
+                } else {
+                    tiempo_calculo += (-t);
+                    Lcd_pantalla_final();
+                    reiniciar_cuadricula();
+                    estado_juego = 0;
+                }
+
+                Lcd_actualizar_tiempo_calculo(tiempo_calculo);
+            }
+        } else if (estado_juego == 6) {
+
+            // parpadeo de recuadro de la celda seleccionada
+            if (ultimo_segundo != tiempo_total) {
+                ultimo_segundo = tiempo_total;
+                if (parpadeo == 1) {
+                    Lcd_desmarcar_celda(fila - 1, columna - 1);
+                    parpadeo = 0;
+                } else {
+                    Lcd_marcar_celda(fila - 1, columna - 1);
+                    parpadeo = 1;
+                }
+            }
+
+            if (comprobarPulsacion(0) == 1) {
+                //descartar valor, restaurar anterior
+                //desactivar alarma
+                //...
+
+                celda_poner_valor(&cuadricula[fila - 1][columna - 1],
+                        ultima_modificada);
+
+                int t = preparar_movimiento();
+
+                if (t > 0) {
+                    tiempo_calculo += t;
+                    estado_juego = 1;
+                } else {
+                    tiempo_calculo += (-t);
+                    Lcd_pantalla_final();
+                    reiniciar_cuadricula();
+                    estado_juego = 0;
+                }
+
+                Lcd_actualizar_tiempo_calculo(tiempo_calculo);
+            }
+
+            // al cabo de 5s confirmar el valor
+            if (alarma_5s > 0 && tiempo_total >= alarma_5s) {
+
+                int t = preparar_movimiento();
+
+                if (t > 0) {
+                    tiempo_calculo += t;
+                    estado_juego = 1;
+                } else {
+                    tiempo_calculo += (-t);
+                    Lcd_pantalla_final();
+                    reiniciar_cuadricula();
+                    estado_juego = 0;
+                }
+
+                Lcd_actualizar_tiempo_calculo(tiempo_calculo);
+                alarma_5s = 0;
             }
         }
     }

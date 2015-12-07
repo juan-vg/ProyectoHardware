@@ -32,34 +32,34 @@ extern STRU_BITMAP Stru_Bitmap_gbMouse;
 
 /*--- codigo de la funcion ---*/
 void Lcd_Init(void) {
-	rDITHMODE = 0x1223a;
-	rDP1_2 = 0x5a5a;
-	rDP4_7 = 0x366cd9b;
-	rDP3_5 = 0xda5a7;
-	rDP2_3 = 0xad7;
-	rDP5_7 = 0xfeda5b7;
-	rDP3_4 = 0xebd7;
-	rDP4_5 = 0xebfd7;
-	rDP6_7 = 0x7efdfbf;
+    rDITHMODE = 0x1223a;
+    rDP1_2 = 0x5a5a;
+    rDP4_7 = 0x366cd9b;
+    rDP3_5 = 0xda5a7;
+    rDP2_3 = 0xad7;
+    rDP5_7 = 0xfeda5b7;
+    rDP3_4 = 0xebd7;
+    rDP4_5 = 0xebfd7;
+    rDP6_7 = 0x7efdfbf;
 
-	rLCDCON1 = (0) | (1 << 5) | (MVAL_USED << 7) | (0x0 << 8) | (0x0 << 10)
-			| (CLKVAL_GREY16 << 12);
-	rLCDCON2 = (LINEVAL) | (HOZVAL << 10) | (10 << 21);
-	rLCDSADDR1 = (0x2 << 27)
-			| (((LCD_ACTIVE_BUFFER >> 22) << 21) | M5D(LCD_ACTIVE_BUFFER>>1));
-	rLCDSADDR2 = M5D(((LCD_ACTIVE_BUFFER+(SCR_XSIZE*LCD_YSIZE/2))>>1))
-			| (MVAL << 21);
-	rLCDSADDR3 = (LCD_XSIZE / 4) | (((SCR_XSIZE - LCD_XSIZE)/4)<<9 );
-	// enable,4B_SNGL_SCAN,WDLY=8clk,WLH=8clk,
-	rLCDCON1 = (1) | (1 << 5) | (MVAL_USED << 7) | (0x3 << 8) | (0x3 << 10)
-			| (CLKVAL_GREY16 << 12);
-	rBLUELUT = 0xfa40;
-	//Enable LCD Logic and EL back-light.
-	rPDATE = rPDATE & 0x0e;
+    rLCDCON1 = (0) | (1 << 5) | (MVAL_USED << 7) | (0x0 << 8) | (0x0 << 10)
+            | (CLKVAL_GREY16 << 12);
+    rLCDCON2 = (LINEVAL) | (HOZVAL << 10) | (10 << 21);
+    rLCDSADDR1 = (0x2 << 27)
+            | (((LCD_ACTIVE_BUFFER >> 22) << 21) | M5D(LCD_ACTIVE_BUFFER>>1));
+    rLCDSADDR2 = M5D(((LCD_ACTIVE_BUFFER+(SCR_XSIZE*LCD_YSIZE/2))>>1))
+            | (MVAL << 21);
+    rLCDSADDR3 = (LCD_XSIZE / 4) | (((SCR_XSIZE - LCD_XSIZE)/4)<<9 );
+    // enable,4B_SNGL_SCAN,WDLY=8clk,WLH=8clk,
+    rLCDCON1 = (1) | (1 << 5) | (MVAL_USED << 7) | (0x3 << 8) | (0x3 << 10)
+            | (CLKVAL_GREY16 << 12);
+    rBLUELUT = 0xfa40;
+    //Enable LCD Logic and EL back-light.
+    rPDATE = rPDATE & 0x0e;
 
-	//DMA ISR
-	rINTMSK &= ~(BIT_GLOBAL | BIT_ZDMA0);
-	pISR_ZDMA0 = (int) Zdma0Done;
+    //DMA ISR
+    rINTMSK &= ~(BIT_GLOBAL | BIT_ZDMA0);
+    pISR_ZDMA0 = (int) Zdma0Done;
 }
 
 /*********************************************************************************************
@@ -71,12 +71,12 @@ void Lcd_Init(void) {
  * comment:
  *********************************************************************************************/
 void Lcd_Active_Clr(void) {
-	INT32U i;
-	INT32U *pDisp = (INT32U *) LCD_ACTIVE_BUFFER;
+    INT32U i;
+    INT32U *pDisp = (INT32U *) LCD_ACTIVE_BUFFER;
 
-	for (i = 0; i < (SCR_XSIZE * SCR_YSIZE / 2 / 4); i++) {
-		*pDisp++ = WHITE;
-	}
+    for (i = 0; i < (SCR_XSIZE * SCR_YSIZE / 2 / 4); i++) {
+        *pDisp++ = WHITE;
+    }
 }
 
 /*********************************************************************************************
@@ -86,14 +86,14 @@ void Lcd_Active_Clr(void) {
  * ret:		pot's color value
  * modify:
  * comment:
- *********************************************************************************************/
-INT8U LCD_GetPixel(INT16U usX, INT16U usY) {
-	INT8U ucColor;
+ *********************************************************************************************/INT8U LCD_GetPixel(
+        INT16U usX, INT16U usY) {
+    INT8U ucColor;
 
-	ucColor = *((INT8U*) (LCD_VIRTUAL_BUFFER + usY * SCR_XSIZE / 2 + usX / 8 * 4
-			+ 3 - (usX % 8) / 2));
-	ucColor = (ucColor >> ((1 - (usX % 2)) * 4)) & 0x0f;
-	return ucColor;
+    ucColor = *((INT8U*) (LCD_VIRTUAL_BUFFER + usY * SCR_XSIZE / 2 + usX / 8 * 4
+            + 3 - (usX % 8) / 2));
+    ucColor = (ucColor >> ((1 - (usX % 2)) * 4)) & 0x0f;
+    return ucColor;
 }
 
 /*********************************************************************************************
@@ -105,12 +105,12 @@ INT8U LCD_GetPixel(INT16U usX, INT16U usY) {
  * comment:
  *********************************************************************************************/
 void Lcd_Clr(void) {
-	INT32U i;
-	INT32U *pDisp = (INT32U *) LCD_VIRTUAL_BUFFER;
+    INT32U i;
+    INT32U *pDisp = (INT32U *) LCD_VIRTUAL_BUFFER;
 
-	for (i = 0; i < (SCR_XSIZE * SCR_YSIZE / 2 / 4); i++) {
-		*pDisp++ = WHITE;
-	}
+    for (i = 0; i < (SCR_XSIZE * SCR_YSIZE / 2 / 4); i++) {
+        *pDisp++ = WHITE;
+    }
 }
 
 /*********************************************************************************************
@@ -123,47 +123,47 @@ void Lcd_Clr(void) {
  * comment:	also as clear screen function
  *********************************************************************************************/
 void LcdClrRect(INT16 usLeft, INT16 usTop, INT16 usRight, INT16 usBottom,
-		INT8U ucColor) {
-	INT16 i, k, l, m;
+        INT8U ucColor) {
+    INT16 i, k, l, m;
 
-	INT32U ulColor = (ucColor << 28) | (ucColor << 24) | (ucColor << 20)
-			| (ucColor << 16) | (ucColor << 12) | (ucColor << 8)
-			| (ucColor << 4) | ucColor;
+    INT32U ulColor = (ucColor << 28) | (ucColor << 24) | (ucColor << 20)
+            | (ucColor << 16) | (ucColor << 12) | (ucColor << 8)
+            | (ucColor << 4) | ucColor;
 
-	i = k = l = m = 0;
-	if ((usRight - usLeft) <= 8) {
-		for (i = usTop; i <= usBottom; i++) {
-			for (m = usLeft; m <= usRight; m++) {
-				LCD_PutPixel(m, i, ucColor);
-			}
-		}
-		return;
-	}
+    i = k = l = m = 0;
+    if ((usRight - usLeft) <= 8) {
+        for (i = usTop; i <= usBottom; i++) {
+            for (m = usLeft; m <= usRight; m++) {
+                LCD_PutPixel(m, i, ucColor);
+            }
+        }
+        return;
+    }
 
-	/* check borderline */
-	if (0 == (usLeft % 8))
-		k = usLeft;
-	else {
-		k = (usLeft / 8) * 8 + 8;
-	}
-	if (0 == (usRight % 8))
-		l = usRight;
-	else {
-		l = (usRight / 8) * 8;
-	}
+    /* check borderline */
+    if (0 == (usLeft % 8))
+        k = usLeft;
+    else {
+        k = (usLeft / 8) * 8 + 8;
+    }
+    if (0 == (usRight % 8))
+        l = usRight;
+    else {
+        l = (usRight / 8) * 8;
+    }
 
-	for (i = usTop; i <= usBottom; i++) {
-		for (m = usLeft; m <= (k - 1); m++) {
-			LCD_PutPixel(m, i, ucColor);
-		}
-		for (m = k; m < l; m += 8) {
-			(*(INT32U*) (LCD_VIRTUAL_BUFFER + i * SCR_XSIZE / 2 + m / 2)) =
-					ulColor;
-		}
-		for (m = l; m <= usRight; m++) {
-			LCD_PutPixel(m, i, ucColor);
-		}
-	}
+    for (i = usTop; i <= usBottom; i++) {
+        for (m = usLeft; m <= (k - 1); m++) {
+            LCD_PutPixel(m, i, ucColor);
+        }
+        for (m = k; m < l; m += 8) {
+            (*(INT32U*) (LCD_VIRTUAL_BUFFER + i * SCR_XSIZE / 2 + m / 2)) =
+                    ulColor;
+        }
+        for (m = l; m <= usRight; m++) {
+            LCD_PutPixel(m, i, ucColor);
+        }
+    }
 }
 
 /*********************************************************************************************
@@ -176,11 +176,11 @@ void LcdClrRect(INT16 usLeft, INT16 usTop, INT16 usRight, INT16 usBottom,
  * comment:
  *********************************************************************************************/
 void Lcd_Draw_Box(INT16 usLeft, INT16 usTop, INT16 usRight, INT16 usBottom,
-		INT8U ucColor) {
-	Lcd_Draw_HLine(usLeft, usRight, usTop, ucColor, 1);
-	Lcd_Draw_HLine(usLeft, usRight, usBottom, ucColor, 1);
-	Lcd_Draw_VLine(usTop, usBottom, usLeft, ucColor, 1);
-	Lcd_Draw_VLine(usTop, usBottom, usRight, ucColor, 1);
+        INT8U ucColor) {
+    Lcd_Draw_HLine(usLeft, usRight, usTop, ucColor, 1);
+    Lcd_Draw_HLine(usLeft, usRight, usBottom, ucColor, 1);
+    Lcd_Draw_VLine(usTop, usBottom, usLeft, ucColor, 1);
+    Lcd_Draw_VLine(usTop, usBottom, usRight, ucColor, 1);
 }
 
 /*********************************************************************************************
@@ -195,68 +195,68 @@ void Lcd_Draw_Box(INT16 usLeft, INT16 usTop, INT16 usRight, INT16 usBottom,
  * comment:
  *********************************************************************************************/
 void Lcd_Draw_Line(INT16 usX0, INT16 usY0, INT16 usX1, INT16 usY1,
-		INT8U ucColor, INT16U usWidth) {
-	INT16 usDx;
-	INT16 usDy;
-	INT16 y_sign;
-	INT16 x_sign;
-	INT16 decision;
-	INT16 wCurx, wCury, wNextx, wNexty, wpy, wpx;
+        INT8U ucColor, INT16U usWidth) {
+    INT16 usDx;
+    INT16 usDy;
+    INT16 y_sign;
+    INT16 x_sign;
+    INT16 decision;
+    INT16 wCurx, wCury, wNextx, wNexty, wpy, wpx;
 
-	if (usY0 == usY1) {
-		Lcd_Draw_HLine(usX0, usX1, usY0, ucColor, usWidth);
-		return;
-	}
-	if (usX0 == usX1) {
-		Lcd_Draw_VLine(usY0, usY1, usX0, ucColor, usWidth);
-		return;
-	}
-	usDx = abs(usX0 - usX1);
-	usDy = abs(usY0 - usY1);
-	if (((usDx >= usDy && (usX0 > usX1)) || ((usDy > usDx) && (usY0 > usY1)))) {
-		GUISWAP(usX1, usX0);
-		GUISWAP(usY1, usY0);
-	}
-	y_sign = (usY1 - usY0) / usDy;
-	x_sign = (usX1 - usX0) / usDx;
+    if (usY0 == usY1) {
+        Lcd_Draw_HLine(usX0, usX1, usY0, ucColor, usWidth);
+        return;
+    }
+    if (usX0 == usX1) {
+        Lcd_Draw_VLine(usY0, usY1, usX0, ucColor, usWidth);
+        return;
+    }
+    usDx = abs(usX0 - usX1);
+    usDy = abs(usY0 - usY1);
+    if (((usDx >= usDy && (usX0 > usX1)) || ((usDy > usDx) && (usY0 > usY1)))) {
+        GUISWAP(usX1, usX0);
+        GUISWAP(usY1, usY0);
+    }
+    y_sign = (usY1 - usY0) / usDy;
+    x_sign = (usX1 - usX0) / usDx;
 
-	if (usDx >= usDy) {
-		for (wCurx = usX0, wCury = usY0, wNextx = usX1, wNexty = usY1, decision =
-				(usDx >> 1); wCurx <= wNextx; wCurx++, wNextx--, decision +=
-				usDy) {
-			if (decision >= usDx) {
-				decision -= usDx;
-				wCury += y_sign;
-				wNexty -= y_sign;
-			}
-			for (wpy = wCury - usWidth / 2; wpy <= wCury + usWidth / 2; wpy++) {
-				LCD_PutPixel(wCurx, wpy, ucColor);
-			}
+    if (usDx >= usDy) {
+        for (wCurx = usX0, wCury = usY0, wNextx = usX1, wNexty = usY1, decision =
+                (usDx >> 1); wCurx <= wNextx; wCurx++, wNextx--, decision +=
+                usDy) {
+            if (decision >= usDx) {
+                decision -= usDx;
+                wCury += y_sign;
+                wNexty -= y_sign;
+            }
+            for (wpy = wCury - usWidth / 2; wpy <= wCury + usWidth / 2; wpy++) {
+                LCD_PutPixel(wCurx, wpy, ucColor);
+            }
 
-			for (wpy = wNexty - usWidth / 2; wpy <= wNexty + usWidth / 2;
-					wpy++) {
-				LCD_PutPixel(wNextx, wpy, ucColor);
-			}
-		}
-	} else {
-		for (wCurx = usX0, wCury = usY0, wNextx = usX1, wNexty = usY1, decision =
-				(usDy >> 1); wCury <= wNexty; wCury++, wNexty--, decision +=
-				usDx) {
-			if (decision >= usDy) {
-				decision -= usDy;
-				wCurx += x_sign;
-				wNextx -= x_sign;
-			}
-			for (wpx = wCurx - usWidth / 2; wpx <= wCurx + usWidth / 2; wpx++) {
-				LCD_PutPixel(wpx, wCury, ucColor);
-			}
+            for (wpy = wNexty - usWidth / 2; wpy <= wNexty + usWidth / 2;
+                    wpy++) {
+                LCD_PutPixel(wNextx, wpy, ucColor);
+            }
+        }
+    } else {
+        for (wCurx = usX0, wCury = usY0, wNextx = usX1, wNexty = usY1, decision =
+                (usDy >> 1); wCury <= wNexty; wCury++, wNexty--, decision +=
+                usDx) {
+            if (decision >= usDy) {
+                decision -= usDy;
+                wCurx += x_sign;
+                wNextx -= x_sign;
+            }
+            for (wpx = wCurx - usWidth / 2; wpx <= wCurx + usWidth / 2; wpx++) {
+                LCD_PutPixel(wpx, wCury, ucColor);
+            }
 
-			for (wpx = wNextx - usWidth / 2; wpx <= wNextx + usWidth / 2;
-					wpx++) {
-				LCD_PutPixel(wpx, wNexty, ucColor);
-			}
-		}
-	}
+            for (wpx = wNextx - usWidth / 2; wpx <= wNextx + usWidth / 2;
+                    wpx++) {
+                LCD_PutPixel(wpx, wNexty, ucColor);
+            }
+        }
+    }
 }
 
 /*********************************************************************************************
@@ -271,20 +271,20 @@ void Lcd_Draw_Line(INT16 usX0, INT16 usY0, INT16 usX1, INT16 usY1,
  * comment:
  *********************************************************************************************/
 void Lcd_Draw_HLine(INT16 usX0, INT16 usX1, INT16 usY0, INT8U ucColor,
-		INT16U usWidth) {
-	INT16 usLen;
+        INT16U usWidth) {
+    INT16 usLen;
 
-	if (usX1 < usX0) {
-		GUISWAP(usX1, usX0);
-	}
+    if (usX1 < usX0) {
+        GUISWAP(usX1, usX0);
+    }
 
-	while ((usWidth--) > 0) {
-		usLen = usX1 - usX0 + 1;
-		while ((usLen--) > 0) {
-			LCD_PutPixel(usX0 + usLen, usY0, ucColor);
-		}
-		usY0++;
-	}
+    while ((usWidth--) > 0) {
+        usLen = usX1 - usX0 + 1;
+        while ((usLen--) > 0) {
+            LCD_PutPixel(usX0 + usLen, usY0, ucColor);
+        }
+        usY0++;
+    }
 }
 
 /*********************************************************************************************
@@ -299,20 +299,20 @@ void Lcd_Draw_HLine(INT16 usX0, INT16 usX1, INT16 usY0, INT8U ucColor,
  * comment:
  *********************************************************************************************/
 void Lcd_Draw_VLine(INT16 usY0, INT16 usY1, INT16 usX0, INT8U ucColor,
-		INT16U usWidth) {
-	INT16 usLen;
+        INT16U usWidth) {
+    INT16 usLen;
 
-	if (usY1 < usY0) {
-		GUISWAP(usY1, usY0);
-	}
+    if (usY1 < usY0) {
+        GUISWAP(usY1, usY0);
+    }
 
-	while ((usWidth--) > 0) {
-		usLen = usY1 - usY0 + 1;
-		while ((usLen--) > 0) {
-			LCD_PutPixel(usX0, usY0 + usLen, ucColor);
-		}
-		usX0++;
-	}
+    while ((usWidth--) > 0) {
+        usLen = usY1 - usY0 + 1;
+        while ((usLen--) > 0) {
+            LCD_PutPixel(usX0, usY0 + usLen, ucColor);
+        }
+        usX0++;
+    }
 }
 
 /*********************************************************************************************
@@ -326,34 +326,34 @@ void Lcd_Draw_VLine(INT16 usY0, INT16 usY1, INT16 usX0, INT8U ucColor,
  * comment:
  *********************************************************************************************/
 void Lcd_DspAscII8x16(INT16U x0, INT16U y0, INT8U ForeColor, INT8U * s) {
-	INT16 i, j, k, x, y, xx;
-	INT8U qm;
-	INT32U ulOffset;
-	INT8 ywbuf[16], temp[2];
+    INT16 i, j, k, x, y, xx;
+    INT8U qm;
+    INT32U ulOffset;
+    INT8 ywbuf[16], temp[2];
 
-	for (i = 0; i < strlen((const char*) s); i++) {
-		if ((INT8U) *(s + i) >= 161) {
-			temp[0] = *(s + i);
-			temp[1] = '\0';
-			return;
-		} else {
-			qm = *(s + i);
-			ulOffset = (INT32U) (qm) * 16;		//Here to be changed tomorrow
-			for (j = 0; j < 16; j++) {
-				ywbuf[j] = g_auc_Ascii8x16[ulOffset + j];
-			}
+    for (i = 0; i < strlen((const char*) s); i++) {
+        if ((INT8U) *(s + i) >= 161) {
+            temp[0] = *(s + i);
+            temp[1] = '\0';
+            return;
+        } else {
+            qm = *(s + i);
+            ulOffset = (INT32U) (qm) * 16;		//Here to be changed tomorrow
+            for (j = 0; j < 16; j++) {
+                ywbuf[j] = g_auc_Ascii8x16[ulOffset + j];
+            }
 
-			for (y = 0; y < 16; y++) {
-				for (x = 0; x < 8; x++) {
-					k = x % 8;
-					if (ywbuf[y] & (0x80 >> k)) {
-						xx = x0 + x + i * 8;
-						LCD_PutPixel(xx, (y + y0), (INT8U)ForeColor);
-					}
-				}
-			}
-		}
-	}
+            for (y = 0; y < 16; y++) {
+                for (x = 0; x < 8; x++) {
+                    k = x % 8;
+                    if (ywbuf[y] & (0x80 >> k)) {
+                        xx = x0 + x + i * 8;
+                        LCD_PutPixel(xx, (y + y0), (INT8U)ForeColor);
+                    }
+                }
+            }
+        }
+    }
 }
 
 /*********************************************************************************************
@@ -366,17 +366,17 @@ void Lcd_DspAscII8x16(INT16U x0, INT16U y0, INT8U ForeColor, INT8U * s) {
  * comment:
  *********************************************************************************************/
 void ReverseLine(INT32U ulHeight, INT32U ulY) {
-	INT32U i, j, temp;
+    INT32U i, j, temp;
 
-	for (i = 0; i < ulHeight; i++) {
-		for (j = 0; j < (SCR_XSIZE / 4 / 2); j++) {
-			temp = *(INT32U*) (LCD_VIRTUAL_BUFFER + (ulY + i) * SCR_XSIZE / 2
-					+ j * 4);
-			temp ^= 0xFFFFFFFF;
-			*(INT32U*) (LCD_VIRTUAL_BUFFER + (ulY + i) * SCR_XSIZE / 2 + j * 4) =
-					temp;
-		}
-	}
+    for (i = 0; i < ulHeight; i++) {
+        for (j = 0; j < (SCR_XSIZE / 4 / 2); j++) {
+            temp = *(INT32U*) (LCD_VIRTUAL_BUFFER + (ulY + i) * SCR_XSIZE / 2
+                    + j * 4);
+            temp ^= 0xFFFFFFFF;
+            *(INT32U*) (LCD_VIRTUAL_BUFFER + (ulY + i) * SCR_XSIZE / 2 + j * 4) =
+                    temp;
+        }
+    }
 }
 
 /*********************************************************************************************
@@ -389,8 +389,8 @@ void ReverseLine(INT32U ulHeight, INT32U ulY) {
  *********************************************************************************************/
 static INT8U ucZdma0Done = 1;//When DMA is finish,ucZdma0Done is cleared to Zero
 void Zdma0Done(void) {
-	rI_ISPC = BIT_ZDMA0;	    //clear pending
-	ucZdma0Done = 0;
+    rI_ISPC = BIT_ZDMA0;	    //clear pending
+    ucZdma0Done = 0;
 }
 
 /*********************************************************************************************
@@ -402,31 +402,31 @@ void Zdma0Done(void) {
  * comment:
  *********************************************************************************************/
 void Lcd_Dma_Trans(void) {
-	INT8U err;
+    INT8U err;
 
-	ucZdma0Done = 1;
-	//#define LCD_VIRTUAL_BUFFER	(0xc400000)
-	//#define LCD_ACTIVE_BUFFER	(LCD_VIRTUAL_BUFFER+(SCR_XSIZE*SCR_YSIZE/2))	//DMA ON
-	//#define LCD_ACTIVE_BUFFER	LCD_VIRTUAL_BUFFER								//DMA OFF
-	//#define LCD_BUF_SIZE		(SCR_XSIZE*SCR_YSIZE/2)
-	//So the Lcd Buffer Low area is from LCD_VIRTUAL_BUFFER to (LCD_ACTIVE_BUFFER+(SCR_XSIZE*SCR_YSIZE/2))
-	rNCACHBE1 = (((unsigned) (LCD_ACTIVE_BUFFER) >> 12) << 16)
-			| ((unsigned) (LCD_VIRTUAL_BUFFER) >> 12);
-	rZDISRC0 = (DW << 30) | (1 << 28) | LCD_VIRTUAL_BUFFER; // inc
-	rZDIDES0 = (2 << 30) | (1 << 28) | LCD_ACTIVE_BUFFER; // inc
-	rZDICNT0 = (2 << 28) | (1 << 26) | (3 << 22) | (0 << 20) | (LCD_BUF_SIZE);
-	//                      |            |            |             |            |---->0 = Disable DMA
-	//                      |            |            |             |------------>Int. whenever transferred
-	//                      |            |            |-------------------->Write time on the fly
-	//                      |            |---------------------------->Block(4-word) transfer mode
-	//                      |------------------------------------>whole service
-	//reEnable ZDMA transfer
-	rZDICNT0 |= (1 << 20);		//after ES3
-	rZDCON0 = 0x1; // start!!!
+    ucZdma0Done = 1;
+    //#define LCD_VIRTUAL_BUFFER	(0xc400000)
+    //#define LCD_ACTIVE_BUFFER	(LCD_VIRTUAL_BUFFER+(SCR_XSIZE*SCR_YSIZE/2))	//DMA ON
+    //#define LCD_ACTIVE_BUFFER	LCD_VIRTUAL_BUFFER								//DMA OFF
+    //#define LCD_BUF_SIZE		(SCR_XSIZE*SCR_YSIZE/2)
+    //So the Lcd Buffer Low area is from LCD_VIRTUAL_BUFFER to (LCD_ACTIVE_BUFFER+(SCR_XSIZE*SCR_YSIZE/2))
+    rNCACHBE1 = (((unsigned) (LCD_ACTIVE_BUFFER) >> 12) << 16)
+            | ((unsigned) (LCD_VIRTUAL_BUFFER) >> 12);
+    rZDISRC0 = (DW << 30) | (1 << 28) | LCD_VIRTUAL_BUFFER; // inc
+    rZDIDES0 = (2 << 30) | (1 << 28) | LCD_ACTIVE_BUFFER; // inc
+    rZDICNT0 = (2 << 28) | (1 << 26) | (3 << 22) | (0 << 20) | (LCD_BUF_SIZE);
+    //                      |            |            |             |            |---->0 = Disable DMA
+    //                      |            |            |             |------------>Int. whenever transferred
+    //                      |            |            |-------------------->Write time on the fly
+    //                      |            |---------------------------->Block(4-word) transfer mode
+    //                      |------------------------------------>whole service
+    //reEnable ZDMA transfer
+    rZDICNT0 |= (1 << 20);		//after ES3
+    rZDCON0 = 0x1; // start!!!
 
-	//Delay(500);
-	while (ucZdma0Done)
-		;		//wait for DMA finish
+    //Delay(500);
+    while (ucZdma0Done)
+        ;		//wait for DMA finish
 }
 
 /*********************************************************************************************
@@ -438,182 +438,311 @@ void Lcd_Dma_Trans(void) {
  * comment:
  *********************************************************************************************/
 void Lcd_Test(void) {
-	/* initial LCD controller */
-	Lcd_Init();
-	/* clear screen */
-	Lcd_Clr();
-	Lcd_Active_Clr();
+    /* initial LCD controller */
+    Lcd_Init();
+    /* clear screen */
+    Lcd_Clr();
+    Lcd_Active_Clr();
 
-	/* draw rectangle pattern */
+    /* draw rectangle pattern */
 #ifdef Eng_v // english version
-	Lcd_DspAscII8x16(10,0,DARKGRAY,"Embest S3CEV40 ");
+    Lcd_DspAscII8x16(10,0,DARKGRAY,"Embest S3CEV40 ");
 #else
 //	Lcd_DspHz16(10,0,DARKGRAY,"英蓓特三星实验评估板");
 #endif
-	Lcd_DspAscII8x16(10, 20, BLACK, "Codigo del puesto: ");
-	Lcd_Draw_Box(10, 40, 310, 230, 14);
-	Lcd_Draw_Box(20, 45, 300, 225, 13);
-	Lcd_Draw_Box(30, 50, 290, 220, 12);
-	Lcd_Draw_Box(40, 55, 280, 215, 11);
-	Lcd_Draw_Box(50, 60, 270, 210, 10);
-	Lcd_Draw_Box(60, 65, 260, 205, 9);
-	Lcd_Draw_Box(70, 70, 250, 200, 8);
-	Lcd_Draw_Box(80, 75, 240, 195, 7);
-	Lcd_Draw_Box(90, 80, 230, 190, 6);
-	Lcd_Draw_Box(100, 85, 220, 185, 5);
-	Lcd_Draw_Box(110, 90, 210, 180, 4);
-	Lcd_Draw_Box(120, 95, 200, 175, 3);
-	Lcd_Draw_Box(130, 100, 190, 170, 2);
-	BitmapView(10, 40, Stru_Bitmap_gbMouse);
-	Lcd_Dma_Trans();
+    Lcd_DspAscII8x16(10, 20, BLACK, "Codigo del puesto: ");
+    Lcd_Draw_Box(10, 40, 310, 230, 14);
+    Lcd_Draw_Box(20, 45, 300, 225, 13);
+    Lcd_Draw_Box(30, 50, 290, 220, 12);
+    Lcd_Draw_Box(40, 55, 280, 215, 11);
+    Lcd_Draw_Box(50, 60, 270, 210, 10);
+    Lcd_Draw_Box(60, 65, 260, 205, 9);
+    Lcd_Draw_Box(70, 70, 250, 200, 8);
+    Lcd_Draw_Box(80, 75, 240, 195, 7);
+    Lcd_Draw_Box(90, 80, 230, 190, 6);
+    Lcd_Draw_Box(100, 85, 220, 185, 5);
+    Lcd_Draw_Box(110, 90, 210, 180, 4);
+    Lcd_Draw_Box(120, 95, 200, 175, 3);
+    Lcd_Draw_Box(130, 100, 190, 170, 2);
+    BitmapView(10, 40, Stru_Bitmap_gbMouse);
+    Lcd_Dma_Trans();
 
 }
 
 void Lcd_pantalla_inicial(void) {
-	/* clear screen */
-	Lcd_Clr();
-	Lcd_Active_Clr();
+    /* clear screen */
+    Lcd_Clr();
+    Lcd_Active_Clr();
 
-	Lcd_DspAscII8x16(10, 0, BLACK, "Instrucciones del juego: ");
-	Lcd_DspAscII8x16(20, 16, BLACK, "Instruccion 1");
-	Lcd_DspAscII8x16(20, 32, BLACK, "Instruccion 2");
+    Lcd_DspAscII8x16(10, 0, BLACK, "Instrucciones del juego: ");
+    Lcd_DspAscII8x16(20, 16, BLACK, "Instruccion 1");
+    Lcd_DspAscII8x16(20, 32, BLACK, "Instruccion 2");
 
-	Lcd_DspAscII8x16(10, 224, BLACK, "Pulse un boton para jugar");
-	BitmapView(320, 240, Stru_Bitmap_gbMouse);
-	Lcd_Dma_Trans();
+    Lcd_DspAscII8x16(50, 224, BLACK, "Pulse un boton para jugar");
+    BitmapView(320, 240, Stru_Bitmap_gbMouse);
+    Lcd_Dma_Trans();
 }
 
-void Lcd_actualizar_tiempo(int tiempo){
-	INT8U t[6] = {0,0,':',0,0,'\0'};
-	LcdClrRect(280, 0, 320, 15, WHITE);
-	int minutos = tiempo / 60;
-	int segundos = tiempo % 60;
+void Lcd_pantalla_final(void) {
 
-	t[0] = (minutos / 10) + 48;
-	t[1] = (minutos % 10) + 48;
-	t[3] = (segundos / 10) + 48;
-	t[4] = (segundos % 10) + 48;
+    LcdClrRect(0, 16, 320, 240, WHITE);
 
-	/*t[0] = 48;
-	t[1] = 48;
-	t[3] = 48;
-	t[4] = (tiempo % 10) + 48;*/
+    Lcd_DspAscII8x16(100, 120, BLACK, "JUEGO TERMINADO!");
 
-	Lcd_DspAscII8x16(280, 0, BLACK, t);
-	Lcd_Dma_Trans();
+    Lcd_DspAscII8x16(50, 224, BLACK, "Pulse un boton para jugar");
+    BitmapView(320, 240, Stru_Bitmap_gbMouse);
+    Lcd_Dma_Trans();
+}
+
+void Lcd_pantalla_confirmar(void) {
+
+    LcdClrRect(0, 16, 320, 240, WHITE);
+
+    Lcd_DspAscII8x16(100, 100, BLACK, "TERMINAR PARTIDA?");
+
+    Lcd_DspAscII8x16(80, 132, BLACK, "SEGUIR:   Boton izquierdo");
+    Lcd_DspAscII8x16(80, 148, BLACK, "TERMINAR: Boton derecho");
+    BitmapView(320, 240, Stru_Bitmap_gbMouse);
+    Lcd_Dma_Trans();
+}
+
+void Lcd_actualizar_tiempo_calculo(int tiempo) {
+    INT8U t[8] = { 0, 0, 0, 0, 0, 0, 0, '\0' };
+    LcdClrRect(82, 0, 138, 15, WHITE);
+
+    int i;
+
+    for (i = 6; i >= 0; i--) {
+        t[i] = (tiempo % 10) + 48;
+        tiempo /= 10;
+    }
+
+    Lcd_DspAscII8x16(82, 0, BLACK, t);
+    //Lcd_Dma_Trans();
+}
+
+void Lcd_actualizar_tiempo_total(int tiempo) {
+    INT8U t[6] = { 0, 0, ':', 0, 0, '\0' };
+    LcdClrRect(270, 0, 310, 15, WHITE);
+    int minutos = tiempo / 60;
+    int segundos = tiempo % 60;
+
+    t[0] = (minutos / 10) + 48;
+    t[1] = (minutos % 10) + 48;
+    t[3] = (segundos / 10) + 48;
+    t[4] = (segundos % 10) + 48;
+
+    Lcd_DspAscII8x16(270, 0, BLACK, t);
+    Lcd_Dma_Trans();
 }
 
 INT16 margen_H = 76;
 INT16 margen_V = 32;
 
 void Lcd_cuadricula_sudoku(void) {
-	/* clear screen */
-	Lcd_Clr();
-	Lcd_Active_Clr();
+    /* clear screen */
+    Lcd_Clr();
+    Lcd_Active_Clr();
 
-	Lcd_DspAscII8x16(10, 0, BLACK, "Informacion de tiempos");
+    Lcd_DspAscII8x16(10, 0, BLACK, "T. calc: ");
 
-	Lcd_Draw_HLine(0, 320, 16, BLACK, 1);
+    Lcd_DspAscII8x16(139, 0, BLACK, "us");
 
-	INT16 offset_H, offset_V;
+    Lcd_DspAscII8x16(206, 0, BLACK, "T. tot: ");
 
-	offset_H = margen_V;
-	offset_V = margen_H;
+    Lcd_Draw_HLine(0, 320, 16, BLACK, 1);
 
-	INT16 long_cuadricula = 167 + 19 + 2;
+    INT16 offset_H, offset_V;
 
-	// pinta cuadricula
-	int i;
-	for (i = 0; i < 10; i++) {
-		INT16U ancho_linea;
+    offset_H = margen_V;
+    offset_V = margen_H;
 
-		if (i % 3 == 0) {
-			ancho_linea = 3;
-		} else {
-			ancho_linea = 1;
-		}
-		/*Lcd_Draw_HLine(8, 320, 32 + i*23, BLACK, ancho_linea);
-		 Lcd_Draw_VLine(32, 240, 8 + i*34, BLACK, ancho_linea);*/
+    INT16 long_cuadricula = 167 + 19 + 2;
 
-		/*Lcd_Draw_HLine(137, 320, 40 + i*20, BLACK, ancho_linea);
-		 Lcd_Draw_VLine(40, 222, 137 + i*20, BLACK, ancho_linea);*/
+    // pinta cuadricula
+    int i;
+    for (i = 0; i < 10; i++) {
+        INT16U ancho_linea;
 
-		Lcd_Draw_HLine(margen_H, margen_H + long_cuadricula, offset_H, BLACK, ancho_linea);
-		Lcd_Draw_VLine(margen_V, margen_V + long_cuadricula, offset_V, BLACK, ancho_linea);
+        if (i % 3 == 0) {
+            ancho_linea = 3;
+        } else {
+            ancho_linea = 1;
+        }
+        /*Lcd_Draw_HLine(8, 320, 32 + i*23, BLACK, ancho_linea);
+         Lcd_Draw_VLine(32, 240, 8 + i*34, BLACK, ancho_linea);*/
 
-		offset_H += 19 + ancho_linea;
-		offset_V += 19 + ancho_linea;
-	}
+        /*Lcd_Draw_HLine(137, 320, 40 + i*20, BLACK, ancho_linea);
+         Lcd_Draw_VLine(40, 222, 137 + i*20, BLACK, ancho_linea);*/
 
-	// pinta nums de fila y columna
-	INT16 posicion = 8;
-	INT8U num[2] = {0,'\0'};
-	for (i = 1; i < 10; i++){
+        Lcd_Draw_HLine(margen_H, margen_H + long_cuadricula, offset_H, BLACK,
+                ancho_linea);
+        Lcd_Draw_VLine(margen_V, margen_V + long_cuadricula, offset_V, BLACK,
+                ancho_linea);
 
-		// transforma a ascii
-		num[0] = i + 48;
-		Lcd_DspAscII8x16(margen_H + posicion, 16, BLACK, num);
-		Lcd_DspAscII8x16(margen_H - 12, margen_V + posicion - 4, BLACK, num);
-		posicion += 19;
+        offset_H += 19 + ancho_linea;
+        offset_V += 19 + ancho_linea;
+    }
 
-		if(i % 3 == 0){
-			posicion += 3;
-		} else {
-			posicion += 1;
-		}
-	}
+    // pinta nums de fila y columna
+    INT16 posicion = 8;
+    INT8U num[2] = { 0, '\0' };
+    for (i = 1; i < 10; i++) {
 
-	Lcd_DspAscII8x16(0, 224, BLACK, "Introduzca Fila A para acabar la partida");
-	BitmapView(320, 240, Stru_Bitmap_gbMouse);
-	Lcd_Dma_Trans();
+        // transforma a ascii
+        num[0] = i + 48;
+        Lcd_DspAscII8x16(margen_H + posicion, 16, BLACK, num);
+        Lcd_DspAscII8x16(margen_H - 12, margen_V + posicion - 4, BLACK, num);
+        posicion += 19;
+
+        if (i % 3 == 0) {
+            posicion += 3;
+        } else {
+            posicion += 1;
+        }
+    }
+
+    Lcd_DspAscII8x16(0, 224, BLACK, "Introduzca Fila A para acabar la partida");
+    BitmapView(320, 240, Stru_Bitmap_gbMouse);
+    Lcd_Dma_Trans();
+}
+
+void Lcd_limpiar_celda(INT8U fila, INT8U columna) {
+    INT16U px_fila = fila * 19;
+    INT16U px_columna = columna * 19;
+
+    // sumar incremento (2=3-1) de lineas gruesas (3) con respecto a las finas (1)
+    px_fila += ((fila / 3) + 1) * 2;
+    px_columna += ((columna / 3) + 1) * 2;
+
+    // sumar lineas finas
+    px_fila += fila + 1;
+    px_columna += columna + 1;
+
+    // sumar margenes de la cuadricula
+    px_fila += margen_V;
+    px_columna += margen_H;
+
+    LcdClrRect(px_columna, px_fila, px_columna + 19 - 1, px_fila + 19 - 1,
+            WHITE);
+}
+
+void Lcd_marcar_celda_color(INT8U fila, INT8U columna, INT8U color) {
+    INT16U px_fila = fila * 19;
+    INT16U px_columna = columna * 19;
+
+    // sumar incremento (2=3-1) de lineas gruesas (3) con respecto a las finas (1)
+    px_fila += ((fila / 3) + 1) * 2;
+    px_columna += ((columna / 3) + 1) * 2;
+
+    // sumar lineas finas
+    px_fila += fila + 1;
+    px_columna += columna + 1;
+
+    // sumar margenes de la cuadricula
+    px_fila += margen_V;
+    px_columna += margen_H;
+
+    Lcd_Draw_Box(px_columna, px_fila, px_columna + 19 - 1, px_fila + 19 - 1,
+                color);
+    Lcd_Draw_Box(px_columna + 1, px_fila + 1, px_columna + 19 - 2, px_fila + 19 - 2,
+            color);
+}
+
+void Lcd_marcar_celda(INT8U fila, INT8U columna) {
+    Lcd_marcar_celda_color(fila, columna, BLACK);
+}
+
+void Lcd_desmarcar_celda(INT8U fila, INT8U columna) {
+    Lcd_marcar_celda_color(fila, columna, WHITE);
+}
+
+void rellenar_candidatos(INT16U px_fila, INT16U px_columna, INT16U candidatos) {
+
+    INT16U fila, columna;
+    INT8U margen = 1;
+    INT8U lado = 4;
+    INT8U i = 0;
+
+    px_fila += margen;
+    px_columna += margen;
+
+    fila = px_fila;
+    columna = px_columna;
+
+    for (i = 1; i <= 9; i++) {
+
+        if ((candidatos & (0x1 << (i - 1))) > 0) {
+            LcdClrRect(columna, fila, columna + lado, fila + lado, BLACK);
+        }
+
+        columna += lado + margen + 1;
+
+        if (i % 3 == 0) {
+            fila += lado + margen + 1;
+            columna = px_columna;
+        }
+    }
 }
 
 void Lcd_rellenar_celda(INT8U fila, INT8U columna, CELDA celda) {
-	INT16U px_fila = fila * 19;
-	INT16U px_columna = columna * 19;
+    INT16U px_fila = fila * 19;
+    INT16U px_columna = columna * 19;
 
-	INT8U valor[2] = {0,'\0'};
+    INT8U valor[2] = { 0, '\0' };
 
-	valor[0] = celda >> 12;
-	valor[0] += 48;
+    valor[0] = celda >> 12;
+    if (valor[0] == 0) {
+        valor[0] = ' ';
+    } else {
+        valor[0] += 48;
+    }
 
-	INT8U es_pista = (celda & 0x0800) >> 11;
-	INT8U color = BLACK;
-	INT8U tiene_error;
+    INT8U es_pista = (celda & 0x0800) >> 11;
+    INT8U color = BLACK;
+    INT8U tiene_error;
 
-	// sumar incremento (2=3-1) de lineas gruesas (3) con respecto a las finas (1)
-	px_fila += ((fila / 3) + 1) * 2;
-	px_columna += ((columna / 3) + 1) * 2;
+    // sumar incremento (2=3-1) de lineas gruesas (3) con respecto a las finas (1)
+    px_fila += ((fila / 3) + 1) * 2;
+    px_columna += ((columna / 3) + 1) * 2;
 
-	// sumar lineas finas
-	px_fila += fila + 1;
-	px_columna += columna + 1;
+    // sumar lineas finas
+    px_fila += fila + 1;
+    px_columna += columna + 1;
 
-	// sumar margenes de la cuadricula
-	px_fila += margen_V;
-	px_columna += margen_H;
+    // sumar margenes de la cuadricula
+    px_fila += margen_V;
+    px_columna += margen_H;
 
-	if(es_pista == 1){
-		//pintar celda de negro
-		LcdClrRect(px_columna, px_fila, px_columna + 19, px_fila + 19, BLACK);
-		color = WHITE;
-	} else {
-		tiene_error = (celda & 0x0400) >> 10;
-		if(tiene_error == 1){
+    if (es_pista == 1) {
+        //pintar celda de negro
+        LcdClrRect(px_columna, px_fila, px_columna + 19, px_fila + 19, BLACK);
+        color = WHITE;
+    }
 
-			// linea diagonal: de izq a dcha, de arriba a abajo
-			Lcd_Draw_Line(px_columna, px_fila, px_columna + 19, px_fila + 19, BLACK, 1);
+    tiene_error = (celda & 0x0400) >> 10;
+    if (tiene_error == 1) {
 
-			// linea diagonal: de dcha a izq, de arriba a abajo
-			Lcd_Draw_Line(px_columna + 19, px_fila, px_columna, px_fila + 19, BLACK, 1);
-		}
-	}
+        // linea diagonal: de izq a dcha, de arriba a abajo
+        Lcd_Draw_Line(px_columna, px_fila, px_columna + 19, px_fila + 19, color,
+                1);
 
-	// sumar margen interior de la celda
-	px_fila += 2;
-	px_columna += 6;
+        // linea diagonal: de dcha a izq, de arriba a abajo
+        Lcd_Draw_Line(px_columna + 19, px_fila, px_columna, px_fila + 19, color,
+                1);
 
-	Lcd_DspAscII8x16(px_columna, px_fila, color, valor);
+    }
 
-	//Lcd_Dma_Trans();
+    if (valor[0] == ' ') {
+
+        rellenar_candidatos(px_fila, px_columna, celda & 0x1FF);
+    } else {
+
+        // sumar margen interior de la celda
+        px_fila += 2;
+        px_columna += 6;
+        Lcd_DspAscII8x16(px_columna, px_fila, color, valor);
+    }
+
+    //Lcd_Dma_Trans();
 }

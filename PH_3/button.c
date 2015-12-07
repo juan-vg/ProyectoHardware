@@ -66,13 +66,13 @@ void Eint4567_ISR(void) {
     switch (which_int) {
     case 4:
         pulsado = 1;    // boton izquierdo (1) pulsado
-        btn_izq_pnd = btn_izq_pnd + 1;
+        btn_izq_pnd = 1;
 		// avanzar el 8Led una posicion
 		D8Led_siguiente();
         break;
     case 8:
         pulsado = 2;    // boton derecho (2) pulsado
-        btn_dch_pnd = btn_dch_pnd + 1;
+        btn_dch_pnd = 1;
         break;
     default:
         break;
