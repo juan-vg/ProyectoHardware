@@ -17,20 +17,22 @@
 #define DMA_HW    (1)
 #define DMA_Word  (2)
 #define DW 		  DMA_Byte		//configura  ZDMA0 como media palabras
+
 /*--- variables externas ---*/
 extern INT8U g_auc_Ascii8x16[];
 extern STRU_BITMAP Stru_Bitmap_gbMouse;
 
-//typedef uint16_t CELDA;
-// La información de cada celda está codificada en 16 bits
-// con el siguiente formato (empezando en el bit más significativo):
-// 4 MSB VALOR
-// 1 bit PISTA
-// 1 bit ERROR
-// 1 bit no usado
-// 9 LSB CANDIDATOS
+/*--- variables globales ---*/
+INT16 margen_H = 76;
+INT16 margen_V = 32;
 
-/*--- codigo de la funcion ---*/
+/*--- definicion de funciones ---*/
+
+void acentuar_vocales(void);
+void acentuar_ascii(INT8U ref_val_ascii, INT8U val_ascii);
+void escribirAscii(INT8U val_ascii, INT8U representacion[16]);
+
+/*--- codigo de las funciones ---*/
 void Lcd_Init(void) {
     rDITHMODE = 0x1223a;
     rDP1_2 = 0x5a5a;
@@ -60,6 +62,55 @@ void Lcd_Init(void) {
     //DMA ISR
     rINTMSK &= ~(BIT_GLOBAL | BIT_ZDMA0);
     pISR_ZDMA0 = (int) Zdma0Done;
+
+    //crear simbolos nuevos para letras acentuadas
+    acentuar_vocales();
+}
+
+void escribirAscii(INT8U val_ascii, INT8U representacion[16]) {
+    unsigned int pos = val_ascii * 16;
+    INT16U i;
+
+    for (i = 0; i < 16; i++) {
+        g_auc_Ascii8x16[pos + i] = representacion[i];
+    }
+}
+
+void acentuar_ascii(INT8U ref_val_ascii, INT8U val_ascii) {
+    INT8U representacion[16];
+
+    INT16U pos = ref_val_ascii * 16;
+
+    INT8U i;
+
+    for (i = 0; i < 16; i++) {
+        representacion[i] = g_auc_Ascii8x16[pos + i];
+    }
+
+    if (ref_val_ascii >= 'a' && ref_val_ascii <= 'z') {
+        representacion[2] = 0x0c;
+        representacion[3] = 0x18;
+        representacion[4] = 0x30;
+    } else {
+        representacion[0] = 0x0c;
+        representacion[1] = 0x18;
+    }
+
+    escribirAscii(val_ascii, representacion);
+}
+
+void acentuar_vocales(void) {
+    acentuarAscii('a', 'á');
+    acentuarAscii('e', 'é');
+    acentuarAscii('i', 'í');
+    acentuarAscii('o', 'ó');
+    acentuarAscii('u', 'ú');
+
+    acentuarAscii('A', 'Á');
+    acentuarAscii('E', 'É');
+    acentuarAscii('I', 'Í');
+    acentuarAscii('O', 'Ó');
+    acentuarAscii('U', 'Ú');
 }
 
 /*********************************************************************************************
@@ -332,28 +383,52 @@ void Lcd_DspAscII8x16(INT16U x0, INT16U y0, INT8U ForeColor, INT8U * s) {
     INT8 ywbuf[16], temp[2];
 
     for (i = 0; i < strlen((const char*) s); i++) {
-        if ((INT8U) *(s + i) >= 161) {
-            temp[0] = *(s + i);
-            temp[1] = '\0';
-            return;
-        } else {
-            qm = *(s + i);
-            ulOffset = (INT32U) (qm) * 16;		//Here to be changed tomorrow
-            for (j = 0; j < 16; j++) {
-                ywbuf[j] = g_auc_Ascii8x16[ulOffset + j];
-            }
+        qm = *(s + i);
 
-            for (y = 0; y < 16; y++) {
-                for (x = 0; x < 8; x++) {
-                    k = x % 8;
-                    if (ywbuf[y] & (0x80 >> k)) {
-                        xx = x0 + x + i * 8;
-                        LCD_PutPixel(xx, (y + y0), (INT8U)ForeColor);
-                    }
+        // adaptacion para eñes
+        if(qm == 'ñ'){
+            qm = 28;
+        }
+
+        ulOffset = (INT32U) (qm) * 16;     //Here to be changed tomorrow
+        for (j = 0; j < 16; j++) {
+            ywbuf[j] = g_auc_Ascii8x16[ulOffset + j];
+        }
+
+        for (y = 0; y < 16; y++) {
+            for (x = 0; x < 8; x++) {
+                k = x % 8;
+                if (ywbuf[y] & (0x80 >> k)) {
+                    xx = x0 + x + i * 8;
+                    LCD_PutPixel(xx, (y + y0), (INT8U)ForeColor);
                 }
             }
         }
     }
+
+    /*for (i = 0; i < strlen((const char*) s); i++) {
+     if ((INT8U) *(s + i) >= 161) {
+     temp[0] = *(s + i);
+     temp[1] = '\0';
+     return;
+     } else {
+     qm = *(s + i);
+     ulOffset = (INT32U) (qm) * 16;		//Here to be changed tomorrow
+     for (j = 0; j < 16; j++) {
+     ywbuf[j] = g_auc_Ascii8x16[ulOffset + j];
+     }
+
+     for (y = 0; y < 16; y++) {
+     for (x = 0; x < 8; x++) {
+     k = x % 8;
+     if (ywbuf[y] & (0x80 >> k)) {
+     xx = x0 + x + i * 8;
+     LCD_PutPixel(xx, (y + y0), (INT8U)ForeColor);
+     }
+     }
+     }
+     }
+     }*/
 }
 
 /*********************************************************************************************
@@ -387,7 +462,7 @@ void ReverseLine(INT32U ulHeight, INT32U ulY) {
  * modify:
  * comment:
  *********************************************************************************************/
-static INT8U ucZdma0Done = 1;//When DMA is finish,ucZdma0Done is cleared to Zero
+static INT8U ucZdma0Done = 1; //When DMA is finish,ucZdma0Done is cleared to Zero
 void Zdma0Done(void) {
     rI_ISPC = BIT_ZDMA0;	    //clear pending
     ucZdma0Done = 0;
@@ -510,7 +585,8 @@ void Lcd_pantalla_presentacion(void) {
     Lcd_Draw_VLine(offsetV, offsetV + 60, offsetH, BLACK, 10);
     // + 2 diagonales
     Lcd_Draw_Line(offsetH + 30, offsetV, offsetH + 40, offsetV + 30, BLACK, 10);
-    Lcd_Draw_Line(offsetH + 40, offsetV + 30, offsetH + 30, offsetV + 60, BLACK, 10);
+    Lcd_Draw_Line(offsetH + 40, offsetV + 30, offsetH + 30, offsetV + 60, BLACK,
+            10);
 
     offsetH += tH_letra + mH_letra + mH_letra;
 
@@ -525,9 +601,10 @@ void Lcd_pantalla_presentacion(void) {
     // Letra K: H(80-160) W(210-260)
     Lcd_Draw_VLine(offsetV, offsetV + 60, offsetH, BLACK, 10);
     // + 2 diagonales
-    Lcd_Draw_Line(offsetH + tH_letra, offsetV, offsetH, offsetV + 30, BLACK, 10);
-    Lcd_Draw_Line(offsetH, offsetV + 30, offsetH + tH_letra, offsetV + 60, BLACK, 10);
-
+    Lcd_Draw_Line(offsetH + tH_letra, offsetV, offsetH, offsetV + 30, BLACK,
+            10);
+    Lcd_Draw_Line(offsetH, offsetV + 30, offsetH + tH_letra, offsetV + 60,
+            BLACK, 10);
 
     offsetH += tH_letra + mH_letra + mH_letra;
 
@@ -539,6 +616,9 @@ void Lcd_pantalla_presentacion(void) {
     offsetH += tH_letra + mH_letra + mH_letra;
 }
 
+/**
+ * Muestra una pantalla con las instrucciones del Sudoku.
+ */
 void Lcd_pantalla_inicial(void) {
 
     /* clear screen */
@@ -570,6 +650,9 @@ void Lcd_pantalla_inicial(void) {
     Lcd_Dma_Trans();
 }
 
+/**
+ * Muestra una pantalla con los resultados del juego.
+ */
 void Lcd_pantalla_final(INT8 result, INT8U num_acc, INT8U num_err) {
 
     LcdClrRect(0, 16, 320, 240, WHITE);
@@ -605,6 +688,10 @@ void Lcd_pantalla_final(INT8 result, INT8U num_acc, INT8U num_err) {
     Lcd_Dma_Trans();
 }
 
+/**
+ * Muestra una pantalla de confirmacion (si el usuario desea terminar
+ * la partida).
+ */
 void Lcd_pantalla_confirmar(void) {
 
     LcdClrRect(0, 16, 320, 240, WHITE);
@@ -617,6 +704,10 @@ void Lcd_pantalla_confirmar(void) {
     Lcd_Dma_Trans();
 }
 
+/**
+ * Actualiza el valor del tiempo de calculo que se muestra en la pantalla
+ * segun el parametro [tiempo].
+ */
 void Lcd_actualizar_tiempo_calculo(int tiempo) {
     INT8U t[8] = { 0, 0, 0, 0, 0, 0, 0, '\0' };
     LcdClrRect(82, 0, 138, 15, WHITE);
@@ -632,6 +723,10 @@ void Lcd_actualizar_tiempo_calculo(int tiempo) {
     //Lcd_Dma_Trans();
 }
 
+/**
+ * Actualiza el valor del tiempo total que se muestra en la pantalla segun
+ * el parametro [tiempo].
+ */
 void Lcd_actualizar_tiempo_total(int tiempo) {
     INT8U t[6] = { 0, 0, ':', 0, 0, '\0' };
     LcdClrRect(270, 0, 310, 15, WHITE);
@@ -647,9 +742,9 @@ void Lcd_actualizar_tiempo_total(int tiempo) {
     Lcd_Dma_Trans();
 }
 
-INT16 margen_H = 76;
-INT16 margen_V = 32;
-
+/**
+ * Dibuja en la pantalla la cuadricula del Sudoku.
+ */
 void Lcd_cuadricula_sudoku(void) {
     /* clear screen */
     Lcd_Clr();
@@ -718,6 +813,10 @@ void Lcd_cuadricula_sudoku(void) {
     Lcd_Dma_Trans();
 }
 
+/**
+ * Limpia el contenido de una celda de la cuadricula cuya posicion
+ * viene indicada por la fila [fila] y columna [columna].
+ */
 void Lcd_limpiar_celda(INT8U fila, INT8U columna) {
     INT16U px_fila = fila * 19;
     INT16U px_columna = columna * 19;
@@ -738,6 +837,10 @@ void Lcd_limpiar_celda(INT8U fila, INT8U columna) {
             WHITE);
 }
 
+/**
+ * Marca con un rectangulo de color [color] la celda de la cuadricula cuya
+ * posicion viene indicada por la fila [fila] y columna [columna].
+ */
 void Lcd_marcar_celda_color(INT8U fila, INT8U columna, INT8U color) {
     INT16U px_fila = fila * 19;
     INT16U px_columna = columna * 19;
@@ -760,14 +863,28 @@ void Lcd_marcar_celda_color(INT8U fila, INT8U columna, INT8U color) {
             px_fila + 19 - 2, color);
 }
 
+/**
+ * Marca con un rectangulo la celda de la cuadricula cuya posicion viene
+ * indicada por la fila [fila] y columna [columna].
+ */
 void Lcd_marcar_celda(INT8U fila, INT8U columna) {
     Lcd_marcar_celda_color(fila, columna, BLACK);
 }
 
+/**
+ * Desmarca la celda de la cuadricula cuya posicion viene indicada por la fila
+ * [fila] y columna [columna].
+ */
 void Lcd_desmarcar_celda(INT8U fila, INT8U columna) {
     Lcd_marcar_celda_color(fila, columna, WHITE);
 }
 
+/**
+ * Dibuja los numeros candidatos [candidatos] en la celda de la cuadricula cuya
+ * posicion viene indicada por la fila [px_fila] y columna [px_columna]. Los
+ * candidatos se muestran ordenados de izquierda a derecha y de arriba a abajo.
+ *
+ */
 void rellenar_candidatos(INT16U px_fila, INT16U px_columna, INT16U candidatos) {
 
     INT16U fila, columna;
@@ -796,6 +913,15 @@ void rellenar_candidatos(INT16U px_fila, INT16U px_columna, INT16U candidatos) {
     }
 }
 
+/**
+ * Rellena la celda de la cuadricula [celda] cuya posicion viene indicada por la
+ * fila [fila] y columna [columna], dependiendo de si es pista o no, y de si
+ * tiene algun error.
+ *  Celda vacia         - muestra candidatos con marcas negras.
+ *  Valor introducido   - fondo blanco, numero negro.
+ *  Pista               - fondo negro, numero blanco.
+ *  Error               - muestra numero tachado con X.
+ */
 void Lcd_rellenar_celda(INT8U fila, INT8U columna, CELDA celda) {
     INT16U px_fila = fila * 19;
     INT16U px_columna = columna * 19;

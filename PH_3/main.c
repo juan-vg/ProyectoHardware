@@ -193,6 +193,9 @@ int preparar_movimiento() {
 
 }
 
+/**
+ * Reinicia las variables del juego.
+ */
 void reiniciar_juego(void) {
     uint8_t i, j;
 
@@ -209,6 +212,9 @@ void reiniciar_juego(void) {
     }
 }
 
+/**
+ * Rellena el tablero del juego con los valores de la cuadricula.
+ */
 void rellenar_cuadricula(void) {
 
     uint8_t i, j;
