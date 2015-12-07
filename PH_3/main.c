@@ -48,6 +48,7 @@ extern void D8Led_desactivar_avance(void);
 
 // LCD
 extern void Lcd_Init(void);
+extern void Lcd_pantalla_presentacion(INT8);
 extern void Lcd_pantalla_inicial(void);
 extern void Lcd_pantalla_final(INT8, INT8U, INT8U);
 extern void Lcd_cuadricula_sudoku(void);
@@ -60,8 +61,6 @@ extern void Lcd_desmarcar_celda(INT8U, INT8U);
 
 extern void celda_poner_valor(CELDA*, uint8_t);
 extern int sudoku9x9(CELDA cuadricula[NUM_FILAS][NUM_COLUMNAS], int, char*);
-
-
 
 /*--- declaracion de funciones ---*/
 void Main(void);
@@ -166,21 +165,13 @@ int preparar_movimiento() {
 
     rellenar_cuadricula();
 
-    // para filas el rango de valores posibles es [1,9]
-    // pero se permite el 0 para finalizar la partida
-    D8Led_define_rango(1, 0xA);
-
-    // mostrar la letra F (de FILA) en el 8led
-    D8Led_symbol(0xF);
-
-
     num_acciones++;
 
     // si tablero NO terminado
     if (result != 0) {
 
         // si hay error
-        if(result < 0){
+        if (result < 0) {
             num_errores++;
         }
 
@@ -231,6 +222,32 @@ void rellenar_cuadricula(void) {
     }
 }
 
+void preparar_introducir_fila(){
+
+    // para filas el rango de valores posibles es [1,9]
+    // pero se permite el 0 para finalizar la partida
+    D8Led_define_rango(1, 0xA);
+
+    // mostrar la letra F (de FILA) en el 8led
+    D8Led_symbol(0xF);
+
+    // desactivar avance de 8Led (para boton izquierdo)
+    D8Led_desactivar_avance();
+}
+
+void preparar_introducir_columna(){
+
+    // para filas el rango de valores posibles es [1,9]
+    // pero se permite el 0 para finalizar la partida
+    D8Led_define_rango(1, 9);
+
+    // mostrar la letra F (de FILA) en el 8led
+    D8Led_symbol(0xC);
+
+    // desactivar avance de 8Led (para boton izquierdo)
+    D8Led_desactivar_avance();
+}
+
 void Main() {
 
     // Inicializa controladores
@@ -250,6 +267,7 @@ void Main() {
     uint8_t fila, columna;
     uint8_t fin = 0;
     uint8_t ultima_modificada;
+    uint8_t ultimo_marcado;
 
     unsigned int tiempo_total = 0;
     unsigned int tiempo_calculo = 0;
@@ -257,11 +275,24 @@ void Main() {
     unsigned int ultimo_segundo = 0;
     uint8_t parpadeo = 1;
 
+    // PRESENTACION
+    Lcd_pantalla_presentacion(-4);
+    Delay(20000);
+
+    int8_t i;
+    for (i = -2; i < 10; i++) {
+        Lcd_pantalla_presentacion(i);
+        Delay(400);
+    }
+
+    Delay(20000);
+
+    // INSTRUCCIONES
     Lcd_pantalla_inicial();
 
     while (1) {
 
-        // ALARMA CADA 1 SEGUNDO
+        // ALARMA CADA 1 SEGUNDO (actualiza tiempos mostrados)
         if (estado_juego > 0 && fin == 0 && alarma_1s == 1) {
             Lcd_actualizar_tiempo_total(tiempo_total++);
             alarma_1s = 0;
@@ -277,6 +308,8 @@ void Main() {
 
                 Lcd_cuadricula_sudoku();
                 tiempo_calculo += preparar_movimiento();
+                preparar_introducir_fila();
+
                 estado_juego++;
 
                 Lcd_actualizar_tiempo_calculo(tiempo_calculo);
@@ -306,7 +339,8 @@ void Main() {
             // si ha confirmado abortar
             if (fin == 1 && comprobarPulsacion(2) == 1) {
                 resultado_partida = -1;
-                Lcd_pantalla_final(resultado_partida, num_acciones, num_errores);
+                Lcd_pantalla_final(resultado_partida, num_acciones,
+                        num_errores);
                 reiniciar_juego();
                 estado_juego = 0;
                 fin = 0;
@@ -320,12 +354,7 @@ void Main() {
                 rellenar_cuadricula();
                 Lcd_actualizar_tiempo_calculo(tiempo_calculo);
 
-                // para filas el rango de valores posibles es [1,9]
-                // pero se permite el 0 para finalizar la partida
-                D8Led_define_rango(1, 0xA);
-
-                // mostrar la letra F (de FILA) en el 8led
-                D8Led_symbol(0xF);
+                preparar_introducir_fila();
 
                 estado_juego = 1;
                 fin = 0;
@@ -347,11 +376,7 @@ void Main() {
                     fin = 1;
                 } else {
 
-                    // para columnas el rango de valores posibles es [1,9]
-                    D8Led_define_rango(1, 9);
-
-                    // mostrar la letra C (de COLUMNA) en el 8led
-                    D8Led_symbol(0xC);
+                    preparar_introducir_columna();
 
                     estado_juego++;
                 }
@@ -417,6 +442,7 @@ void Main() {
                             cuadricula[fila - 1][columna - 1]);
                     celda_poner_valor(&cuadricula[fila - 1][columna - 1],
                             valor_actual);
+                    ultimo_marcado = valor_actual;
 
                     modificado = 1;
                 }
@@ -439,7 +465,8 @@ void Main() {
                 } else {
                     tiempo_calculo += (-t);
                     resultado_partida = 1;
-                    Lcd_pantalla_final(resultado_partida, num_acciones, num_errores);
+                    Lcd_pantalla_final(resultado_partida, num_acciones,
+                            num_errores);
                     reiniciar_juego();
                     estado_juego = 0;
                 }
@@ -456,18 +483,21 @@ void Main() {
                 ultimo_segundo = tiempo_total;
                 if (parpadeo == 1) {
                     Lcd_desmarcar_celda(fila - 1, columna - 1);
+                    D8Led_symbol(0x10);
                     parpadeo = 0;
                 } else {
                     Lcd_marcar_celda(fila - 1, columna - 1);
+                    D8Led_symbol(ultimo_marcado);
                     parpadeo = 1;
                 }
             }
 
             if (comprobarPulsacion(0) == 1) {
-                //descartar valor, restaurar anterior
-                //desactivar alarma
-                //...
 
+                //desactivar alarma
+                alarma_5s = 0;
+
+                //descartar valor, restaurar anterior
                 celda_poner_valor(&cuadricula[fila - 1][columna - 1],
                         ultima_modificada);
 
@@ -479,7 +509,8 @@ void Main() {
                 } else {
                     tiempo_calculo += (-t);
                     resultado_partida = 1;
-                    Lcd_pantalla_final(resultado_partida, num_acciones, num_errores);
+                    Lcd_pantalla_final(resultado_partida, num_acciones,
+                            num_errores);
                     reiniciar_juego();
                     estado_juego = 0;
                 }
@@ -492,18 +523,18 @@ void Main() {
 
                 /*int t = preparar_movimiento();
 
-                if (t > 0) {
-                    tiempo_calculo += t;
-                    estado_juego = 1;
-                } else {
-                    tiempo_calculo += (-t);
-                    resultado_partida = 1;
-                    Lcd_pantalla_final(resultado_partida, num_acciones, num_errores);
-                    reiniciar_juego();
-                    estado_juego = 0;
-                }
+                 if (t > 0) {
+                 tiempo_calculo += t;
+                 estado_juego = 1;
+                 } else {
+                 tiempo_calculo += (-t);
+                 resultado_partida = 1;
+                 Lcd_pantalla_final(resultado_partida, num_acciones, num_errores);
+                 reiniciar_juego();
+                 estado_juego = 0;
+                 }
 
-                Lcd_actualizar_tiempo_calculo(tiempo_calculo);*/
+                 Lcd_actualizar_tiempo_calculo(tiempo_calculo);*/
 
                 estado_juego = 1;
                 alarma_5s = 0;

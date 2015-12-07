@@ -525,7 +525,7 @@ void Lcd_Test(void) {
 #else
 //	Lcd_DspHz16(10,0,DARKGRAY,"英蓓特三星实验评估板");
 #endif
-    Lcd_DspAscII8x16(10, 20, BLACK, "Codigo del puesto: ");
+    Lcd_DspAscII8x16(10, 20, BLACK, "C骴igo del puesto: ");
     Lcd_Draw_Box(10, 40, 310, 230, 14);
     Lcd_Draw_Box(20, 45, 300, 225, 13);
     Lcd_Draw_Box(30, 50, 290, 220, 12);
@@ -544,11 +544,27 @@ void Lcd_Test(void) {
 
 }
 
-void Lcd_pantalla_presentacion(void) {
+INT8U definir_color(INT8 pos_letra, INT8 pos){
+    if(pos_letra + 3 == pos || pos_letra - 3 == pos){
+        return BLACK - 2;
+    } else if(pos_letra + 2 == pos || pos_letra - 2 == pos){
+        return BLACK - 4;
+    } else if(pos_letra + 1 == pos || pos_letra - 1 == pos){
+        return BLACK - 6;
+    } else if(pos_letra == pos || pos_letra == pos){
+        return BLACK - 8;
+    } else {
+        return BLACK;
+    }
+}
+
+void Lcd_pantalla_presentacion(INT8 pos) {
 
     /* clear screen */
     Lcd_Clr();
     Lcd_Active_Clr();
+
+    INT8U color = BLACK;
 
     // margenes
     INT16U mH_lcd = 10;
@@ -564,56 +580,62 @@ void Lcd_pantalla_presentacion(void) {
     INT16U offsetV = 80 + mV_letra;
 
     // Letra S: H(80-160) W(10-60)
-    Lcd_Draw_HLine(offsetH, offsetH + tH_letra, offsetV, BLACK, 10);
-    Lcd_Draw_HLine(offsetH, offsetH + tH_letra, offsetV + 30, BLACK, 10);
-    Lcd_Draw_HLine(offsetH, offsetH + tH_letra, offsetV + 60, BLACK, 10);
-    Lcd_Draw_VLine(offsetV, offsetV + 30, offsetH, BLACK, 10);
-    Lcd_Draw_VLine(offsetV + 30, offsetV + 60, offsetH + tH_letra, BLACK, 10);
+    color = definir_color(1, pos);
+    Lcd_Draw_HLine(offsetH, offsetH + tH_letra, offsetV, color, 10);
+    Lcd_Draw_HLine(offsetH, offsetH + tH_letra, offsetV + 30, color, 10);
+    Lcd_Draw_HLine(offsetH, offsetH + tH_letra, offsetV + 60, color, 10);
+    Lcd_Draw_VLine(offsetV, offsetV + 30, offsetH, color, 10);
+    Lcd_Draw_VLine(offsetV + 30, offsetV + 60, offsetH + tH_letra, color, 10);
 
     offsetH += tH_letra + mH_letra + mH_letra;
 
     // Letra U: H(80-160) W(60-110)
-    Lcd_Draw_HLine(offsetH, offsetH + tH_letra, offsetV + 60, BLACK, 10);
-    Lcd_Draw_VLine(offsetV, offsetV + 60, offsetH, BLACK, 10);
-    Lcd_Draw_VLine(offsetV, offsetV + 60, offsetH + tH_letra, BLACK, 10);
+    color = definir_color(2, pos);
+    Lcd_Draw_HLine(offsetH, offsetH + tH_letra, offsetV + 60, color, 10);
+    Lcd_Draw_VLine(offsetV, offsetV + 60, offsetH, color, 10);
+    Lcd_Draw_VLine(offsetV, offsetV + 60, offsetH + tH_letra, color, 10);
 
     offsetH += tH_letra + mH_letra + mH_letra;
 
     // Letra D: H(80-160) W(110-160)
-    Lcd_Draw_HLine(offsetH, offsetH + 30, offsetV, BLACK, 10);
-    Lcd_Draw_HLine(offsetH, offsetH + 30, offsetV + 60, BLACK, 10);
-    Lcd_Draw_VLine(offsetV, offsetV + 60, offsetH, BLACK, 10);
+    color = definir_color(3, pos);
+    Lcd_Draw_HLine(offsetH, offsetH + 30, offsetV, color, 10);
+    Lcd_Draw_HLine(offsetH, offsetH + 30, offsetV + 60, color, 10);
+    Lcd_Draw_VLine(offsetV, offsetV + 60, offsetH, color, 10);
     // + 2 diagonales
-    Lcd_Draw_Line(offsetH + 30, offsetV, offsetH + 40, offsetV + 30, BLACK, 10);
-    Lcd_Draw_Line(offsetH + 40, offsetV + 30, offsetH + 30, offsetV + 60, BLACK,
+    Lcd_Draw_Line(offsetH + 30, offsetV, offsetH + 40, offsetV + 30, color, 10);
+    Lcd_Draw_Line(offsetH + 40, offsetV + 30, offsetH + 30, offsetV + 60, color,
             10);
 
     offsetH += tH_letra + mH_letra + mH_letra;
 
     // Letra O: H(80-160) W(160-210)
-    Lcd_Draw_HLine(offsetH, offsetH + tH_letra, offsetV, BLACK, 10);
-    Lcd_Draw_HLine(offsetH, offsetH + tH_letra, offsetV + 60, BLACK, 10);
-    Lcd_Draw_VLine(offsetV, offsetV + 60, offsetH, BLACK, 10);
-    Lcd_Draw_VLine(offsetV, offsetV + 60, offsetH + tH_letra, BLACK, 10);
+    color = definir_color(4, pos);
+    Lcd_Draw_HLine(offsetH, offsetH + tH_letra, offsetV, color, 10);
+    Lcd_Draw_HLine(offsetH, offsetH + tH_letra, offsetV + 60, color, 10);
+    Lcd_Draw_VLine(offsetV, offsetV + 60, offsetH, color, 10);
+    Lcd_Draw_VLine(offsetV, offsetV + 60, offsetH + tH_letra, color, 10);
 
     offsetH += tH_letra + mH_letra + mH_letra;
 
     // Letra K: H(80-160) W(210-260)
-    Lcd_Draw_VLine(offsetV, offsetV + 60, offsetH, BLACK, 10);
+    color = definir_color(5, pos);
+    Lcd_Draw_VLine(offsetV, offsetV + 60, offsetH, color, 10);
     // + 2 diagonales
-    Lcd_Draw_Line(offsetH + tH_letra, offsetV, offsetH, offsetV + 30, BLACK,
+    Lcd_Draw_Line(offsetH + tH_letra, offsetV, offsetH, offsetV + 30, color,
             10);
     Lcd_Draw_Line(offsetH, offsetV + 30, offsetH + tH_letra, offsetV + 60,
-            BLACK, 10);
+            color, 10);
 
     offsetH += tH_letra + mH_letra + mH_letra;
 
     // Letra U: H(80-160) W(260-310)
-    Lcd_Draw_HLine(offsetH, offsetH + tH_letra, offsetV + 60, BLACK, 10);
-    Lcd_Draw_VLine(offsetV, offsetV + 60, offsetH, BLACK, 10);
-    Lcd_Draw_VLine(offsetV, offsetV + 60, offsetH + tH_letra, BLACK, 10);
+    color = definir_color(6, pos);
+    Lcd_Draw_HLine(offsetH, offsetH + tH_letra, offsetV + 60, color, 10);
+    Lcd_Draw_VLine(offsetV, offsetV + 60, offsetH, color, 10);
+    Lcd_Draw_VLine(offsetV, offsetV + 60, offsetH + tH_letra, color, 10);
 
-    offsetH += tH_letra + mH_letra + mH_letra;
+    Lcd_Dma_Trans();
 }
 
 /**
@@ -627,25 +649,25 @@ void Lcd_pantalla_inicial(void) {
 
     Lcd_DspAscII8x16(10, 0, BLACK, "Instrucciones del juego: ");
     Lcd_DspAscII8x16(20, 16, BLACK, "1. Hay que completar las casillas");
-    Lcd_DspAscII8x16(30, 32, BLACK, "vacias con un numero del 1 al 9.");
+    Lcd_DspAscII8x16(30, 32, BLACK, "vac韆s con un n鷐ero del 1 al 9.");
 
-    Lcd_DspAscII8x16(20, 48, BLACK, "2. No puede haber numeros repetidos");
-    Lcd_DspAscII8x16(30, 64, BLACK, "en la misma fila, columna o region.");
+    Lcd_DspAscII8x16(20, 48, BLACK, "2. No puede haber n鷐eros repetidos");
+    Lcd_DspAscII8x16(30, 64, BLACK, "en la misma fila, columna o regi髇.");
 
     Lcd_DspAscII8x16(20, 80, BLACK, "3. Las casillas negras son pistas.");
     Lcd_DspAscII8x16(30, 96, BLACK, "(Las pistas no se pueden modificar)");
 
     Lcd_DspAscII8x16(20, 112, BLACK, "4. Los candidatos para cada celda");
-    Lcd_DspAscII8x16(30, 128, BLACK, "vacia se representan como puntos");
+    Lcd_DspAscII8x16(30, 128, BLACK, "vac韆 se representan como puntos");
     Lcd_DspAscII8x16(30, 144, BLACK, "ordenados (primero arriba izq.)");
 
     Lcd_DspAscII8x16(20, 160, BLACK, "5. Los errores se muestran con una X.");
     Lcd_DspAscII8x16(30, 176, BLACK, "(Se marcan las casillas implicadas)");
 
     Lcd_DspAscII8x16(20, 192, BLACK, "6. Al introducir un valor, durante 5s,");
-    Lcd_DspAscII8x16(30, 208, BLACK, "se puede cancelar pulsando un boton.");
+    Lcd_DspAscII8x16(30, 208, BLACK, "se puede cancelar pulsando un bot髇.");
 
-    Lcd_DspAscII8x16(50, 224, BLACK, "Pulse un boton para jugar!");
+    Lcd_DspAscII8x16(50, 224, BLACK, "Pulse un bot髇 para jugar!");
     BitmapView(320, 240, Stru_Bitmap_gbMouse);
     Lcd_Dma_Trans();
 }
@@ -673,17 +695,17 @@ void Lcd_pantalla_final(INT8 result, INT8U num_acc, INT8U num_err) {
         ascii_val[i] = (num_acc % 10) + 48;
         num_acc /= 10;
     }
-    Lcd_DspAscII8x16(20, 48, BLACK, "Num. acciones realizadas:");
+    Lcd_DspAscII8x16(20, 48, BLACK, "N鷐. acciones realizadas:");
     Lcd_DspAscII8x16(228, 48, BLACK, ascii_val);
 
     for (i = 2; i >= 0; i--) {
         ascii_val[i] = (num_err % 10) + 48;
         num_err /= 10;
     }
-    Lcd_DspAscII8x16(20, 64, BLACK, "Num. errores cometidos:");
+    Lcd_DspAscII8x16(20, 64, BLACK, "N鷐. errores cometidos:");
     Lcd_DspAscII8x16(212, 64, BLACK, ascii_val);
 
-    Lcd_DspAscII8x16(50, 224, BLACK, "Pulse un boton para jugar");
+    Lcd_DspAscII8x16(50, 224, BLACK, "Pulse un bot髇 para jugar");
     BitmapView(320, 240, Stru_Bitmap_gbMouse);
     Lcd_Dma_Trans();
 }
@@ -698,8 +720,8 @@ void Lcd_pantalla_confirmar(void) {
 
     Lcd_DspAscII8x16(100, 100, BLACK, "TERMINAR PARTIDA?");
 
-    Lcd_DspAscII8x16(80, 132, BLACK, "SEGUIR:   Boton izquierdo");
-    Lcd_DspAscII8x16(80, 148, BLACK, "TERMINAR: Boton derecho");
+    Lcd_DspAscII8x16(80, 132, BLACK, "SEGUIR:   Bot髇 izquierdo");
+    Lcd_DspAscII8x16(80, 148, BLACK, "TERMINAR: Bot髇 derecho");
     BitmapView(320, 240, Stru_Bitmap_gbMouse);
     Lcd_Dma_Trans();
 }
