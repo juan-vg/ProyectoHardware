@@ -373,6 +373,11 @@ candidatos_arm_return:
         # (si el valor no esta entre los candidatos -> flag Z=1)
         ands r2, r2, r5
 
+        # pone bit de error (si procede)
+        moveq r6, #1
+        lsleq r6, #10
+        orreq r5, r5, r6
+
 		# almacenar valor de resultado
         moveq r0, #-1
         movne r0, #1

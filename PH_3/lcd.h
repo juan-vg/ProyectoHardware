@@ -128,8 +128,8 @@ void  Lcd_DspHz16(INT16U x0, INT16U y0, INT8U ForeColor, INT8U *s);
 void  ReverseLine(INT32U ulHeight, INT32U ulY);
 INT8U LCD_GetPixel(INT16U usX, INT16U usY);
 
-void Lcd_pantalla_inicial();
-void Lcd_pantalla_final();
+void Lcd_pantalla_inicial(void);
+void Lcd_pantalla_final(INT8 result, INT8U num_acc, INT8U num_err);
 void Lcd_pantalla_confirmar(void);
 void Lcd_actualizar_tiempo_calculo(int tiempo);
 void Lcd_actualizar_tiempo_total(int tiempo);

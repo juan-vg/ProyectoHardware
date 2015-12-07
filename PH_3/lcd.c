@@ -469,25 +469,136 @@ void Lcd_Test(void) {
 
 }
 
+void Lcd_pantalla_presentacion(void) {
+
+    /* clear screen */
+    Lcd_Clr();
+    Lcd_Active_Clr();
+
+    // margenes
+    INT16U mH_lcd = 10;
+    INT16U mH_letra = 5;
+    INT16U mV_letra = 10;
+
+    // tamaños
+    INT16U tH_letra = 50 - mH_letra - mH_letra;
+    INT16U tV_letra = 80 - mV_letra - mV_letra;
+
+    // offsets
+    INT16U offsetH = mH_lcd + mH_letra;
+    INT16U offsetV = 80 + mV_letra;
+
+    // Letra S: H(80-160) W(10-60)
+    Lcd_Draw_HLine(offsetH, offsetH + tH_letra, offsetV, BLACK, 10);
+    Lcd_Draw_HLine(offsetH, offsetH + tH_letra, offsetV + 30, BLACK, 10);
+    Lcd_Draw_HLine(offsetH, offsetH + tH_letra, offsetV + 60, BLACK, 10);
+    Lcd_Draw_VLine(offsetV, offsetV + 30, offsetH, BLACK, 10);
+    Lcd_Draw_VLine(offsetV + 30, offsetV + 60, offsetH + tH_letra, BLACK, 10);
+
+    offsetH += tH_letra + mH_letra + mH_letra;
+
+    // Letra U: H(80-160) W(60-110)
+    Lcd_Draw_HLine(offsetH, offsetH + tH_letra, offsetV + 60, BLACK, 10);
+    Lcd_Draw_VLine(offsetV, offsetV + 60, offsetH, BLACK, 10);
+    Lcd_Draw_VLine(offsetV, offsetV + 60, offsetH + tH_letra, BLACK, 10);
+
+    offsetH += tH_letra + mH_letra + mH_letra;
+
+    // Letra D: H(80-160) W(110-160)
+    Lcd_Draw_HLine(offsetH, offsetH + 30, offsetV, BLACK, 10);
+    Lcd_Draw_HLine(offsetH, offsetH + 30, offsetV + 60, BLACK, 10);
+    Lcd_Draw_VLine(offsetV, offsetV + 60, offsetH, BLACK, 10);
+    // + 2 diagonales
+    Lcd_Draw_Line(offsetH + 30, offsetV, offsetH + 40, offsetV + 30, BLACK, 10);
+    Lcd_Draw_Line(offsetH + 40, offsetV + 30, offsetH + 30, offsetV + 60, BLACK, 10);
+
+    offsetH += tH_letra + mH_letra + mH_letra;
+
+    // Letra O: H(80-160) W(160-210)
+    Lcd_Draw_HLine(offsetH, offsetH + tH_letra, offsetV, BLACK, 10);
+    Lcd_Draw_HLine(offsetH, offsetH + tH_letra, offsetV + 60, BLACK, 10);
+    Lcd_Draw_VLine(offsetV, offsetV + 60, offsetH, BLACK, 10);
+    Lcd_Draw_VLine(offsetV, offsetV + 60, offsetH + tH_letra, BLACK, 10);
+
+    offsetH += tH_letra + mH_letra + mH_letra;
+
+    // Letra K: H(80-160) W(210-260)
+    Lcd_Draw_VLine(offsetV, offsetV + 60, offsetH, BLACK, 10);
+    // + 2 diagonales
+    Lcd_Draw_Line(offsetH + tH_letra, offsetV, offsetH, offsetV + 30, BLACK, 10);
+    Lcd_Draw_Line(offsetH, offsetV + 30, offsetH + tH_letra, offsetV + 60, BLACK, 10);
+
+
+    offsetH += tH_letra + mH_letra + mH_letra;
+
+    // Letra U: H(80-160) W(260-310)
+    Lcd_Draw_HLine(offsetH, offsetH + tH_letra, offsetV + 60, BLACK, 10);
+    Lcd_Draw_VLine(offsetV, offsetV + 60, offsetH, BLACK, 10);
+    Lcd_Draw_VLine(offsetV, offsetV + 60, offsetH + tH_letra, BLACK, 10);
+
+    offsetH += tH_letra + mH_letra + mH_letra;
+}
+
 void Lcd_pantalla_inicial(void) {
+
     /* clear screen */
     Lcd_Clr();
     Lcd_Active_Clr();
 
     Lcd_DspAscII8x16(10, 0, BLACK, "Instrucciones del juego: ");
-    Lcd_DspAscII8x16(20, 16, BLACK, "Instruccion 1");
-    Lcd_DspAscII8x16(20, 32, BLACK, "Instruccion 2");
+    Lcd_DspAscII8x16(20, 16, BLACK, "1. Hay que completar las casillas");
+    Lcd_DspAscII8x16(30, 32, BLACK, "vacias con un numero del 1 al 9.");
 
-    Lcd_DspAscII8x16(50, 224, BLACK, "Pulse un boton para jugar");
+    Lcd_DspAscII8x16(20, 48, BLACK, "2. No puede haber numeros repetidos");
+    Lcd_DspAscII8x16(30, 64, BLACK, "en la misma fila, columna o region.");
+
+    Lcd_DspAscII8x16(20, 80, BLACK, "3. Las casillas negras son pistas.");
+    Lcd_DspAscII8x16(30, 96, BLACK, "(Las pistas no se pueden modificar)");
+
+    Lcd_DspAscII8x16(20, 112, BLACK, "4. Los candidatos para cada celda");
+    Lcd_DspAscII8x16(30, 128, BLACK, "vacia se representan como puntos");
+    Lcd_DspAscII8x16(30, 144, BLACK, "ordenados (primero arriba izq.)");
+
+    Lcd_DspAscII8x16(20, 160, BLACK, "5. Los errores se muestran con una X.");
+    Lcd_DspAscII8x16(30, 176, BLACK, "(Se marcan las casillas implicadas)");
+
+    Lcd_DspAscII8x16(20, 192, BLACK, "6. Al introducir un valor, durante 5s,");
+    Lcd_DspAscII8x16(30, 208, BLACK, "se puede cancelar pulsando un boton.");
+
+    Lcd_DspAscII8x16(50, 224, BLACK, "Pulse un boton para jugar!");
     BitmapView(320, 240, Stru_Bitmap_gbMouse);
     Lcd_Dma_Trans();
 }
 
-void Lcd_pantalla_final(void) {
+void Lcd_pantalla_final(INT8 result, INT8U num_acc, INT8U num_err) {
 
     LcdClrRect(0, 16, 320, 240, WHITE);
 
-    Lcd_DspAscII8x16(100, 120, BLACK, "JUEGO TERMINADO!");
+    Lcd_DspAscII8x16(100, 0, BLACK, "JUEGO TERMINADO!");
+
+    Lcd_DspAscII8x16(20, 32, BLACK, "Resultado:");
+    if (result > 0) {
+        Lcd_DspAscII8x16(108, 32, BLACK, "Juego completado");
+    } else {
+        Lcd_DspAscII8x16(108, 32, BLACK, "Juego abortado");
+    }
+
+    INT8U ascii_val[4] = { 0, 0, 0, '\0' };
+    INT8U i;
+
+    for (i = 2; i >= 0; i--) {
+        ascii_val[i] = (num_acc % 10) + 48;
+        num_acc /= 10;
+    }
+    Lcd_DspAscII8x16(20, 48, BLACK, "Num. acciones realizadas:");
+    Lcd_DspAscII8x16(228, 48, BLACK, ascii_val);
+
+    for (i = 2; i >= 0; i--) {
+        ascii_val[i] = (num_err % 10) + 48;
+        num_err /= 10;
+    }
+    Lcd_DspAscII8x16(20, 64, BLACK, "Num. errores cometidos:");
+    Lcd_DspAscII8x16(212, 64, BLACK, ascii_val);
 
     Lcd_DspAscII8x16(50, 224, BLACK, "Pulse un boton para jugar");
     BitmapView(320, 240, Stru_Bitmap_gbMouse);
@@ -644,9 +755,9 @@ void Lcd_marcar_celda_color(INT8U fila, INT8U columna, INT8U color) {
     px_columna += margen_H;
 
     Lcd_Draw_Box(px_columna, px_fila, px_columna + 19 - 1, px_fila + 19 - 1,
-                color);
-    Lcd_Draw_Box(px_columna + 1, px_fila + 1, px_columna + 19 - 2, px_fila + 19 - 2,
             color);
+    Lcd_Draw_Box(px_columna + 1, px_fila + 1, px_columna + 19 - 2,
+            px_fila + 19 - 2, color);
 }
 
 void Lcd_marcar_celda(INT8U fila, INT8U columna) {

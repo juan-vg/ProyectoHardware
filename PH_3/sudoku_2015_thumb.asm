@@ -352,6 +352,11 @@ candidatos_thumb_return_llena:
 
 candidatos_thumb_return_llena_error:
 
+		# poner bit de error
+        mov r6, #1
+        lsl r6, #10
+        orr r5, r6
+
         mov r0, #1
         mvn r0, r0
         b candidatos_thumb_return_fin
